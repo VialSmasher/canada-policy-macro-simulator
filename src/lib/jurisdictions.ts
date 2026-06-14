@@ -1,6 +1,7 @@
 export type JurisdictionKind = "province" | "state";
 export type MetricQuality = "comparable" | "directional" | "limited";
 export type TrendDirection = "up" | "flat" | "down" | "unknown";
+export type DirectoryStatus = "profiled" | "registered";
 
 export interface JurisdictionMetric {
   value: number | null;
@@ -54,6 +55,19 @@ export interface JurisdictionProfile {
     weakSpots: string[];
     policyLevers: string[];
   };
+}
+
+export interface JurisdictionDirectoryEntry {
+  id: string;
+  name: string;
+  abbreviation: string;
+  country: "Canada" | "United States";
+  kind: JurisdictionKind;
+  colors: JurisdictionColors;
+  peerGroups: string[];
+  dataStatus: DirectoryStatus;
+  dataCompleteness: number;
+  suggestedRivals: string[];
 }
 
 export const cadPerUsd = 1.37;
@@ -311,6 +325,166 @@ export const jurisdictions: JurisdictionProfile[] = [
     }
   }
 ];
+
+const peerGroupMap: Record<string, string[]> = {
+  alberta: ["energy", "high-gdp-per-capita", "resource-economy", "canada"],
+  ontario: ["large-economy", "manufacturing", "housing-pressure", "canada"],
+  quebec: ["hydro-power", "manufacturing", "social-outcomes", "canada"],
+  texas: ["energy", "large-economy", "population-growth", "low-tax"],
+  florida: ["population-growth", "tourism", "housing-pressure", "climate-risk"],
+  california: ["large-economy", "technology", "housing-pressure", "ports"]
+};
+
+const rivalMap: Record<string, string[]> = {
+  alberta: ["texas", "saskatchewan", "north-dakota", "oklahoma", "colorado", "british-columbia"],
+  ontario: ["california", "new-york", "illinois", "michigan", "quebec", "texas"],
+  quebec: ["ontario", "british-columbia", "washington", "massachusetts", "california", "alberta"],
+  texas: ["alberta", "california", "florida", "oklahoma", "north-dakota", "georgia"],
+  florida: ["texas", "california", "arizona", "georgia", "north-carolina", "ontario"],
+  california: ["texas", "ontario", "new-york", "washington", "florida", "quebec"]
+};
+
+const registeredCanada = [
+  ["british-columbia", "British Columbia", "BC", ["canada", "ports", "housing-pressure", "resource-economy"], ["alberta", "washington", "california", "ontario"]],
+  ["saskatchewan", "Saskatchewan", "SK", ["canada", "energy", "resource-economy", "agriculture"], ["alberta", "north-dakota", "texas", "manitoba"]],
+  ["manitoba", "Manitoba", "MB", ["canada", "agriculture", "manufacturing"], ["saskatchewan", "north-dakota", "ontario", "minnesota"]],
+  ["new-brunswick", "New Brunswick", "NB", ["canada", "atlantic", "small-economy"], ["nova-scotia", "maine", "quebec", "prince-edward-island"]],
+  ["nova-scotia", "Nova Scotia", "NS", ["canada", "atlantic", "ports", "universities"], ["new-brunswick", "maine", "massachusetts", "newfoundland-and-labrador"]],
+  ["prince-edward-island", "Prince Edward Island", "PE", ["canada", "atlantic", "small-economy"], ["nova-scotia", "new-brunswick", "maine", "vermont"]],
+  ["newfoundland-and-labrador", "Newfoundland and Labrador", "NL", ["canada", "energy", "atlantic", "resource-economy"], ["alberta", "nova-scotia", "north-dakota", "texas"]],
+  ["yukon", "Yukon", "YT", ["canada", "north", "resource-economy"], ["alaska", "northwest-territories", "british-columbia", "alberta"]],
+  ["northwest-territories", "Northwest Territories", "NT", ["canada", "north", "resource-economy"], ["yukon", "alaska", "nunavut", "alberta"]],
+  ["nunavut", "Nunavut", "NU", ["canada", "north", "small-economy"], ["northwest-territories", "yukon", "alaska", "newfoundland-and-labrador"]]
+] as const;
+
+const registeredStates = [
+  ["alabama", "Alabama", "AL", ["manufacturing", "low-tax", "southern"], ["tennessee", "georgia", "mississippi", "texas"]],
+  ["alaska", "Alaska", "AK", ["energy", "resource-economy", "north"], ["yukon", "northwest-territories", "alberta", "wyoming"]],
+  ["arizona", "Arizona", "AZ", ["population-growth", "housing-pressure", "southwest"], ["florida", "texas", "nevada", "colorado"]],
+  ["arkansas", "Arkansas", "AR", ["low-tax", "southern", "manufacturing"], ["oklahoma", "missouri", "tennessee", "texas"]],
+  ["colorado", "Colorado", "CO", ["energy", "technology", "housing-pressure"], ["alberta", "texas", "utah", "washington"]],
+  ["connecticut", "Connecticut", "CT", ["high-income", "finance", "northeast"], ["massachusetts", "new-york", "new-jersey", "ontario"]],
+  ["delaware", "Delaware", "DE", ["small-economy", "finance", "business-formation"], ["new-jersey", "maryland", "virginia", "florida"]],
+  ["georgia", "Georgia", "GA", ["population-growth", "logistics", "southern"], ["texas", "florida", "north-carolina", "tennessee"]],
+  ["hawaii", "Hawaii", "HI", ["tourism", "housing-pressure", "island"], ["florida", "california", "alaska", "nevada"]],
+  ["idaho", "Idaho", "ID", ["population-growth", "low-tax", "mountain"], ["utah", "montana", "arizona", "alberta"]],
+  ["illinois", "Illinois", "IL", ["large-economy", "manufacturing", "logistics"], ["ontario", "michigan", "new-york", "california"]],
+  ["indiana", "Indiana", "IN", ["manufacturing", "low-tax", "midwest"], ["michigan", "ohio", "ontario", "illinois"]],
+  ["iowa", "Iowa", "IA", ["agriculture", "manufacturing", "midwest"], ["saskatchewan", "nebraska", "minnesota", "manitoba"]],
+  ["kansas", "Kansas", "KS", ["agriculture", "energy", "midwest"], ["oklahoma", "nebraska", "texas", "saskatchewan"]],
+  ["kentucky", "Kentucky", "KY", ["manufacturing", "southern", "logistics"], ["tennessee", "indiana", "ohio", "alabama"]],
+  ["louisiana", "Louisiana", "LA", ["energy", "ports", "southern"], ["texas", "alberta", "mississippi", "florida"]],
+  ["maine", "Maine", "ME", ["northeast", "small-economy", "coastal"], ["new-brunswick", "nova-scotia", "vermont", "new-hampshire"]],
+  ["maryland", "Maryland", "MD", ["high-income", "government", "ports"], ["virginia", "delaware", "new-jersey", "massachusetts"]],
+  ["massachusetts", "Massachusetts", "MA", ["technology", "education", "high-income"], ["quebec", "california", "connecticut", "ontario"]],
+  ["michigan", "Michigan", "MI", ["manufacturing", "auto", "midwest"], ["ontario", "ohio", "indiana", "illinois"]],
+  ["minnesota", "Minnesota", "MN", ["health", "manufacturing", "midwest"], ["manitoba", "ontario", "iowa", "wisconsin"]],
+  ["mississippi", "Mississippi", "MS", ["southern", "low-cost", "small-economy"], ["alabama", "arkansas", "louisiana", "tennessee"]],
+  ["missouri", "Missouri", "MO", ["logistics", "manufacturing", "midwest"], ["illinois", "kansas", "arkansas", "tennessee"]],
+  ["montana", "Montana", "MT", ["resource-economy", "mountain", "low-density"], ["alberta", "idaho", "wyoming", "north-dakota"]],
+  ["nebraska", "Nebraska", "NE", ["agriculture", "midwest", "low-tax"], ["iowa", "kansas", "south-dakota", "saskatchewan"]],
+  ["nevada", "Nevada", "NV", ["tourism", "population-growth", "low-tax"], ["florida", "arizona", "california", "texas"]],
+  ["new-hampshire", "New Hampshire", "NH", ["low-tax", "northeast", "small-economy"], ["vermont", "maine", "massachusetts", "florida"]],
+  ["new-jersey", "New Jersey", "NJ", ["high-income", "ports", "northeast"], ["new-york", "connecticut", "maryland", "ontario"]],
+  ["new-mexico", "New Mexico", "NM", ["energy", "southwest", "low-density"], ["texas", "arizona", "colorado", "alberta"]],
+  ["new-york", "New York", "NY", ["large-economy", "finance", "housing-pressure"], ["ontario", "california", "new-jersey", "illinois"]],
+  ["north-carolina", "North Carolina", "NC", ["population-growth", "technology", "manufacturing"], ["georgia", "florida", "texas", "virginia"]],
+  ["north-dakota", "North Dakota", "ND", ["energy", "resource-economy", "agriculture"], ["alberta", "saskatchewan", "texas", "montana"]],
+  ["ohio", "Ohio", "OH", ["manufacturing", "midwest", "large-economy"], ["ontario", "michigan", "indiana", "pennsylvania"]],
+  ["oklahoma", "Oklahoma", "OK", ["energy", "low-tax", "southern"], ["texas", "alberta", "arkansas", "kansas"]],
+  ["oregon", "Oregon", "OR", ["ports", "technology", "housing-pressure"], ["washington", "british-columbia", "california", "colorado"]],
+  ["pennsylvania", "Pennsylvania", "PA", ["manufacturing", "energy", "large-economy"], ["ohio", "new-york", "ontario", "michigan"]],
+  ["rhode-island", "Rhode Island", "RI", ["small-economy", "northeast", "coastal"], ["connecticut", "massachusetts", "delaware", "nova-scotia"]],
+  ["south-carolina", "South Carolina", "SC", ["manufacturing", "population-growth", "southern"], ["georgia", "north-carolina", "tennessee", "florida"]],
+  ["south-dakota", "South Dakota", "SD", ["low-tax", "agriculture", "small-economy"], ["north-dakota", "nebraska", "wyoming", "saskatchewan"]],
+  ["tennessee", "Tennessee", "TN", ["population-growth", "manufacturing", "low-tax"], ["texas", "georgia", "north-carolina", "alabama"]],
+  ["utah", "Utah", "UT", ["population-growth", "technology", "mountain"], ["colorado", "idaho", "arizona", "texas"]],
+  ["vermont", "Vermont", "VT", ["small-economy", "northeast", "quality-of-life"], ["new-hampshire", "maine", "quebec", "prince-edward-island"]],
+  ["virginia", "Virginia", "VA", ["high-income", "government", "technology"], ["maryland", "north-carolina", "texas", "ontario"]],
+  ["washington", "Washington", "WA", ["technology", "ports", "housing-pressure"], ["british-columbia", "california", "oregon", "quebec"]],
+  ["west-virginia", "West Virginia", "WV", ["energy", "resource-economy", "appalachia"], ["pennsylvania", "kentucky", "ohio", "alberta"]],
+  ["wisconsin", "Wisconsin", "WI", ["manufacturing", "agriculture", "midwest"], ["minnesota", "michigan", "ontario", "iowa"]],
+  ["wyoming", "Wyoming", "WY", ["energy", "low-tax", "resource-economy"], ["alberta", "north-dakota", "texas", "montana"]]
+] as const;
+
+export const jurisdictionDirectory: JurisdictionDirectoryEntry[] = [
+  ...jurisdictions.map((profile) => ({
+    id: profile.id,
+    name: profile.name,
+    abbreviation: profile.abbreviation,
+    country: profile.country,
+    kind: profile.kind,
+    colors: profile.colors,
+    peerGroups: peerGroupMap[profile.id] ?? [],
+    dataStatus: "profiled" as const,
+    dataCompleteness: profileCompleteness(profile),
+    suggestedRivals: rivalMap[profile.id] ?? []
+  })),
+  ...registeredCanada.map(([id, name, abbreviation, peerGroups, suggestedRivals]) =>
+    registeredEntry(id, name, abbreviation, "Canada", "province", peerGroups, suggestedRivals)
+  ),
+  ...registeredStates.map(([id, name, abbreviation, peerGroups, suggestedRivals]) =>
+    registeredEntry(id, name, abbreviation, "United States", "state", peerGroups, suggestedRivals)
+  )
+].sort((a, b) => a.name.localeCompare(b.name));
+
+export function richProfileFor(id: string): JurisdictionProfile | undefined {
+  return jurisdictions.find((profile) => profile.id === id);
+}
+
+export function directoryEntryFor(id: string): JurisdictionDirectoryEntry | undefined {
+  return jurisdictionDirectory.find((entry) => entry.id === id);
+}
+
+export function suggestedRivalsFor(id: string): JurisdictionDirectoryEntry[] {
+  const entry = directoryEntryFor(id);
+  if (!entry) return [];
+  return entry.suggestedRivals
+    .map((rivalId) => directoryEntryFor(rivalId))
+    .filter((rival): rival is JurisdictionDirectoryEntry => Boolean(rival));
+}
+
+function registeredEntry(
+  id: string,
+  name: string,
+  abbreviation: string,
+  country: "Canada" | "United States",
+  kind: JurisdictionKind,
+  peerGroups: readonly string[],
+  suggestedRivals: readonly string[]
+): JurisdictionDirectoryEntry {
+  return {
+    id,
+    name,
+    abbreviation,
+    country,
+    kind,
+    colors: country === "Canada" ? { primary: "#12695f", secondary: "#d8efe5", accent: "#f6c343" } : { primary: "#2f5d8c", secondary: "#e7eef8", accent: "#bf0d3e" },
+    peerGroups: [...peerGroups],
+    dataStatus: "registered",
+    dataCompleteness: 0.12,
+    suggestedRivals: [...suggestedRivals]
+  };
+}
+
+function profileCompleteness(profile: JurisdictionProfile): number {
+  const metrics = [
+    profile.violentCrime,
+    profile.propertyCrime,
+    profile.overdoseDeaths,
+    profile.lifeExpectancy,
+    profile.studentOutcome,
+    profile.affordability,
+    profile.fiscalCapacity
+  ];
+  const observed = metrics.filter((metric) => metric.value !== null).length;
+  const quality = metrics.reduce((sum, metric) => {
+    if (metric.quality === "comparable") return sum + 1;
+    if (metric.quality === "directional") return sum + 0.65;
+    return sum + 0.25;
+  }, 0);
+  return Math.round(((observed / metrics.length) * 0.7 + (quality / metrics.length) * 0.3) * 100) / 100;
+}
 
 export function gdpCadEquivalent(profile: JurisdictionProfile): number {
   return profile.currency === "USD" ? profile.gdpBillionLocal * cadPerUsd : profile.gdpBillionLocal;

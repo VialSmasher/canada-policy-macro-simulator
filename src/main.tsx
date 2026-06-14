@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import {
   Activity,
   AlertTriangle,
+  ArrowRightLeft,
   BarChart3,
   Building2,
   Download,
@@ -12,9 +13,11 @@ import {
   Minus,
   Pickaxe,
   RefreshCw,
+  Search,
   ShieldCheck,
   Sparkles,
   Store,
+  Trophy,
   TrendingDown,
   TrendingUp,
   type LucideIcon
@@ -24,10 +27,16 @@ import { profileFor, teachingScenarios, type TeachingScenario } from "./lib/educ
 import {
   gdpCadEquivalent,
   gdpPerCapitaCadEquivalent,
+  directoryEntryFor,
   jurisdictions,
+  jurisdictionDirectory,
   metricRegistry,
+  richProfileFor,
   scoreJurisdiction,
-  type JurisdictionMetric
+  suggestedRivalsFor,
+  type JurisdictionDirectoryEntry,
+  type JurisdictionMetric,
+  type JurisdictionProfile
 } from "./lib/jurisdictions";
 import { runPolicySimulation, runStressAudit } from "./lib/svar";
 import type { MacroBaseline, PolicyScenario, Province, SimulationRow, StressComparison } from "./lib/types";
@@ -46,7 +55,7 @@ const defaultScenario: PolicyScenario = {
 };
 
 function App() {
-  const [activeView, setActiveView] = useState<"scoreboard" | "simulator">("scoreboard");
+  const [activeView, setActiveView] = useState<"scoreboard" | "matchup" | "simulator">("scoreboard");
   const [baseline, setBaseline] = useState<MacroBaseline>(fallbackBaseline(["Live baseline has not loaded yet."]));
   const [scenario, setScenario] = useState<PolicyScenario>(defaultScenario);
   const [selectedScenarioId, setSelectedScenarioId] = useState("ab-pipeline");
@@ -133,6 +142,9 @@ function App() {
         <button className={activeView === "scoreboard" ? "active" : ""} onClick={() => setActiveView("scoreboard")}>
           Scoreboard
         </button>
+        <button className={activeView === "matchup" ? "active" : ""} onClick={() => setActiveView("matchup")}>
+          Matchup
+        </button>
         <button className={activeView === "simulator" ? "active" : ""} onClick={() => setActiveView("simulator")}>
           Simulator
         </button>
@@ -140,6 +152,8 @@ function App() {
 
       {activeView === "scoreboard" ? (
         <JurisdictionScoreboard />
+      ) : activeView === "matchup" ? (
+        <MatchupMode />
       ) : (
         <>
           <section className="story-band">
@@ -451,6 +465,461 @@ function JurisdictionScoreboard() {
       </div>
     </section>
   );
+}
+
+type Competitor = {
+  entry: JurisdictionDirectoryEntry;
+  profile?: JurisdictionProfile;
+  score?: ReturnType<typeof scoreJurisdiction>;
+};
+
+type MatchupRow = {
+  category: string;
+  label: string;
+  leftValue: string;
+  rightValue: string;
+  leftNumber: number | null;
+  rightNumber: number | null;
+  higherBetter: boolean;
+  comparable: boolean;
+  note: string;
+  winner: "left" | "right" | "tie" | "pending" | "context";
+};
+
+const featuredMatchups = [
+  ["alberta", "texas", "Energy showdown"],
+  ["alberta", "california", "Growth vs scale"],
+  ["ontario", "california", "Mega-economies"],
+  ["ontario", "texas", "Industry vs growth"],
+  ["quebec", "washington", "Power and tech"],
+  ["florida", "british-columbia", "Migration and housing"]
+] as const;
+
+function MatchupMode() {
+  const [leftId, setLeftId] = useState("alberta");
+  const [rightId, setRightId] = useState("texas");
+  const left = buildCompetitor(leftId);
+  const right = buildCompetitor(rightId);
+  const rows = buildMatchupRows(left, right);
+  const leftWins = rows.filter((row) => row.winner === "left").length;
+  const rightWins = rows.filter((row) => row.winner === "right").length;
+  const contextRows = rows.filter((row) => row.winner === "context" || row.winner === "pending").length;
+  const suggested = suggestedRivalsFor(left.entry.id).slice(0, 6);
+  const path = buildPathToWin(left, right);
+
+  return (
+    <section className="matchup-shell">
+      <div className="matchup-hero">
+        <div>
+          <div className="panel-title">
+            <ArrowRightLeft size={18} />
+            Matchup mode
+          </div>
+          <h2>Pick two jurisdictions and see who wins each category</h2>
+          <p>
+            Keep the full roster searchable, but only show the fight you asked for. Fully profiled places get scores; registered places stay
+            selectable and clearly marked as data-pending.
+          </p>
+        </div>
+        <div className="matchup-summary">
+          <MiniStat label={`${left.entry.abbreviation} wins`} value={String(leftWins)} detail={left.entry.name} />
+          <MiniStat label={`${right.entry.abbreviation} wins`} value={String(rightWins)} detail={right.entry.name} />
+          <MiniStat label="Context rows" value={String(contextRows)} detail="pending or not apples-to-apples" />
+        </div>
+      </div>
+
+      <section className="matchup-toolbar">
+        <JurisdictionPicker title="Your jurisdiction" selectedId={left.entry.id} onSelect={setLeftId} />
+        <button
+          className="swap-button"
+          onClick={() => {
+            setLeftId(right.entry.id);
+            setRightId(left.entry.id);
+          }}
+          aria-label="Swap jurisdictions"
+        >
+          <ArrowRightLeft size={19} />
+        </button>
+        <JurisdictionPicker title="Opponent" selectedId={right.entry.id} onSelect={setRightId} />
+      </section>
+
+      <section className="quick-matchups">
+        <div>
+          <div className="panel-title">
+            <Trophy size={18} />
+            Featured matchups
+          </div>
+          <div className="quick-chip-row">
+            {featuredMatchups.map(([home, away, label]) => (
+              <button
+                className="quick-chip"
+                key={`${home}-${away}`}
+                onClick={() => {
+                  setLeftId(home);
+                  setRightId(away);
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div className="panel-title">
+            <Search size={18} />
+            Suggested rivals for {left.entry.name}
+          </div>
+          <div className="quick-chip-row">
+            {suggested.map((entry) => (
+              <button className="quick-chip" key={entry.id} onClick={() => setRightId(entry.id)}>
+                {entry.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="matchup-board">
+        <MatchupTeamCard competitor={left} />
+        <section className="versus-panel">
+          <span>VS</span>
+          <strong>
+            {leftWins === rightWins ? "Even matchup" : leftWins > rightWins ? `${left.entry.name} leads` : `${right.entry.name} leads`}
+          </strong>
+          <small>
+            {rows.length - contextRows} scored rows / {contextRows} context rows
+          </small>
+        </section>
+        <MatchupTeamCard competitor={right} align="right" />
+      </div>
+
+      <section className="matchup-table-panel">
+        <div className="panel-title">
+          <BarChart3 size={18} />
+          Tale of the tape
+        </div>
+        <div className="matchup-table">
+          {rows.map((row) => (
+            <div className={`matchup-row ${row.winner}`} key={`${row.category}-${row.label}`}>
+              <div>
+                <span>{row.category}</span>
+                <strong>{row.leftValue}</strong>
+              </div>
+              <div className="matchup-row-center">
+                <b>{row.label}</b>
+                <small>{row.note}</small>
+                <i>{winnerLabel(row, left.entry, right.entry)}</i>
+              </div>
+              <div>
+                <span>{row.category}</span>
+                <strong>{row.rightValue}</strong>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="path-panel">
+        <div className="panel-title">
+          <Sparkles size={18} />
+          Path to win for {left.entry.name}
+        </div>
+        <div className="path-list">
+          {path.map((item) => (
+            <div key={item.title}>
+              <strong>{item.title}</strong>
+              <span>{item.body}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+    </section>
+  );
+}
+
+function JurisdictionPicker({
+  title,
+  selectedId,
+  onSelect
+}: {
+  title: string;
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const selected = directoryEntryFor(selectedId) ?? jurisdictionDirectory[0];
+  const featuredIds = new Set(["alberta", "texas", "california", "ontario", "florida", "quebec"]);
+  const filtered = jurisdictionDirectory
+    .filter((entry) => {
+      const haystack = `${entry.name} ${entry.abbreviation} ${entry.country} ${entry.peerGroups.join(" ")}`.toLowerCase();
+      return query.trim() ? haystack.includes(query.trim().toLowerCase()) : featuredIds.has(entry.id);
+    })
+    .slice(0, 12);
+  const hiddenCount = query.trim() ? Math.max(0, jurisdictionDirectory.length - filtered.length) : jurisdictionDirectory.length - filtered.length;
+
+  return (
+    <article className="picker-panel">
+      <div className="panel-title">
+        <Search size={18} />
+        {title}
+      </div>
+      <div className="selected-line" style={{ "--team-primary": selected.colors.primary } as React.CSSProperties}>
+        <span>{selected.abbreviation}</span>
+        <div>
+          <strong>{selected.name}</strong>
+          <small>
+            {selected.dataStatus === "profiled" ? "profiled" : "registered"} / {Math.round(selected.dataCompleteness * 100)}% data
+          </small>
+        </div>
+      </div>
+      <label className="search-field">
+        <Search size={16} />
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search states, provinces, peer groups..." />
+      </label>
+      <div className="picker-results">
+        {filtered.map((entry) => (
+          <button
+            className={selectedId === entry.id ? "active" : ""}
+            key={entry.id}
+            style={{ "--team-primary": entry.colors.primary } as React.CSSProperties}
+            onClick={() => onSelect(entry.id)}
+          >
+            <span>{entry.abbreviation}</span>
+            <div>
+              <strong>{entry.name}</strong>
+              <small>
+                {entry.country} / {entry.dataStatus}
+              </small>
+            </div>
+          </button>
+        ))}
+      </div>
+      <p className="picker-note">
+        {query.trim() ? `Showing ${filtered.length} matches. Refine search to pull any registered place.` : `Featured list shown. ${hiddenCount} more places are searchable.`}
+      </p>
+    </article>
+  );
+}
+
+function MatchupTeamCard({ competitor, align = "left" }: { competitor: Competitor; align?: "left" | "right" }) {
+  const { entry, profile, score } = competitor;
+  return (
+    <article className={`matchup-team-card ${align}`} style={{ "--team-primary": entry.colors.primary, "--team-secondary": entry.colors.secondary, "--team-accent": entry.colors.accent } as React.CSSProperties}>
+      <div className="matchup-team-header">
+        <span>{entry.abbreviation}</span>
+        <div>
+          <h2>{entry.name}</h2>
+          <p>
+            {entry.kind} / {entry.country}
+          </p>
+        </div>
+        <b>{score ? `${score.overall}` : "TBD"}</b>
+      </div>
+      {profile ? (
+        <>
+          <div className="matchup-mini-grid">
+            <MiniStat label="GDP" value={`${currency(gdpCadEquivalent(profile))}B`} detail="CAD equivalent" />
+            <MiniStat label="GDP/person" value={numberCompact(gdpPerCapitaCadEquivalent(profile))} detail="CAD equivalent" />
+            <MiniStat label="Growth" value={profile.realGrowthPct === null ? "TBD" : `${fmt(profile.realGrowthPct)}%`} detail="real GDP" />
+          </div>
+          <ScoreBar label="Prosperity" value={score?.prosperity ?? 0} />
+          <ScoreBar label="Growth" value={score?.growth ?? 0} />
+          <ScoreBar label="Safety" value={score?.safety ?? 0} />
+          <ScoreBar label="Health" value={score?.health ?? 0} />
+        </>
+      ) : (
+        <div className="registered-callout">
+          <strong>Registered, not fully profiled yet</strong>
+          <span>
+            This place is pullable for matchup planning. The next data pass needs GDP, safety, health, affordability, and fiscal source adapters.
+          </span>
+          <div>
+            {entry.peerGroups.slice(0, 4).map((group) => (
+              <i key={group}>{group}</i>
+            ))}
+          </div>
+        </div>
+      )}
+    </article>
+  );
+}
+
+function buildCompetitor(id: string): Competitor {
+  const entry = directoryEntryFor(id) ?? jurisdictionDirectory[0];
+  const profile = richProfileFor(entry.id);
+  return {
+    entry,
+    profile,
+    score: profile ? scoreJurisdiction(profile) : undefined
+  };
+}
+
+function buildMatchupRows(left: Competitor, right: Competitor): MatchupRow[] {
+  const leftScore = left.score;
+  const rightScore = right.score;
+  const baseRows: MatchupRow[] = [
+    scoreRow("Composite", "Overall score", leftScore?.overall ?? null, rightScore?.overall ?? null, "prototype index", true, true),
+    scoreRow("Rating", "Prosperity", leftScore?.prosperity ?? null, rightScore?.prosperity ?? null, "GDP/person score", true, true),
+    scoreRow("Rating", "Growth", leftScore?.growth ?? null, rightScore?.growth ?? null, "real GDP preferred", true, Boolean(left.profile?.realGrowthPct !== null && right.profile?.realGrowthPct !== null)),
+    scoreRow("Rating", "Safety", leftScore?.safety ?? null, rightScore?.safety ?? null, "crime method must match", true, safetyComparable(left.profile, right.profile)),
+    scoreRow("Rating", "Health", leftScore?.health ?? null, rightScore?.health ?? null, "overdose rate proxy", true, metricComparable(left.profile?.overdoseDeaths, right.profile?.overdoseDeaths)),
+    valueRow("Economy", "GDP", left.profile ? gdpCadEquivalent(left.profile) : null, right.profile ? gdpCadEquivalent(right.profile) : null, "B CAD eq.", true, true),
+    valueRow("Economy", "GDP/person", left.profile ? gdpPerCapitaCadEquivalent(left.profile) : null, right.profile ? gdpPerCapitaCadEquivalent(right.profile) : null, "CAD eq.", true, true),
+    metricRow("Safety", "Violent crime", left.profile?.violentCrime, right.profile?.violentCrime, false),
+    metricRow("Safety", "Property crime", left.profile?.propertyCrime, right.profile?.propertyCrime, false),
+    metricRow("Health", "Overdose deaths", left.profile?.overdoseDeaths, right.profile?.overdoseDeaths, false)
+  ];
+  return baseRows;
+}
+
+function scoreRow(
+  category: string,
+  label: string,
+  left: number | null,
+  right: number | null,
+  note: string,
+  higherBetter: boolean,
+  comparable: boolean
+): MatchupRow {
+  return {
+    category,
+    label,
+    leftValue: left === null ? "TBD" : String(left),
+    rightValue: right === null ? "TBD" : String(right),
+    leftNumber: left,
+    rightNumber: right,
+    higherBetter,
+    comparable,
+    note,
+    winner: winnerFor(left, right, higherBetter, comparable)
+  };
+}
+
+function valueRow(
+  category: string,
+  label: string,
+  left: number | null,
+  right: number | null,
+  unit: string,
+  higherBetter: boolean,
+  comparable: boolean
+): MatchupRow {
+  return {
+    category,
+    label,
+    leftValue: left === null ? "TBD" : `${numberCompact(left)} ${unit}`.trim(),
+    rightValue: right === null ? "TBD" : `${numberCompact(right)} ${unit}`.trim(),
+    leftNumber: left,
+    rightNumber: right,
+    higherBetter,
+    comparable,
+    note: comparable ? "apples-to-apples enough for MVP" : "context only until harmonized",
+    winner: winnerFor(left, right, higherBetter, comparable)
+  };
+}
+
+function metricRow(
+  category: string,
+  label: string,
+  left: JurisdictionMetric | undefined,
+  right: JurisdictionMetric | undefined,
+  higherBetter: boolean
+): MatchupRow {
+  const comparable = metricComparable(left, right);
+  const leftNumber = left?.value ?? null;
+  const rightNumber = right?.value ?? null;
+  return {
+    category,
+    label,
+    leftValue: left ? metricValue(left) : "TBD",
+    rightValue: right ? metricValue(right) : "TBD",
+    leftNumber,
+    rightNumber,
+    higherBetter,
+    comparable,
+    note: comparable ? "same unit and source family" : "context only until harmonized",
+    winner: winnerFor(leftNumber, rightNumber, higherBetter, comparable)
+  };
+}
+
+function winnerFor(left: number | null, right: number | null, higherBetter: boolean, comparable: boolean): MatchupRow["winner"] {
+  if (left === null || right === null) return "pending";
+  if (!comparable) return "context";
+  if (left === right) return "tie";
+  return higherBetter ? (left > right ? "left" : "right") : left < right ? "left" : "right";
+}
+
+function winnerLabel(row: MatchupRow, left: JurisdictionDirectoryEntry, right: JurisdictionDirectoryEntry) {
+  if (row.winner === "left") return `${left.abbreviation} wins`;
+  if (row.winner === "right") return `${right.abbreviation} wins`;
+  if (row.winner === "tie") return "Tie";
+  if (row.winner === "context") return "Context only";
+  return "Pending data";
+}
+
+function metricComparable(left?: JurisdictionMetric, right?: JurisdictionMetric) {
+  if (!left || !right || left.value === null || right.value === null) return false;
+  return left.quality === "comparable" && right.quality === "comparable" && left.unit === right.unit;
+}
+
+function safetyComparable(left?: JurisdictionProfile, right?: JurisdictionProfile) {
+  return metricComparable(left?.violentCrime, right?.violentCrime) && metricComparable(left?.propertyCrime, right?.propertyCrime);
+}
+
+function buildPathToWin(left: Competitor, right: Competitor) {
+  if (!left.profile) {
+    return [
+      {
+        title: "Complete the data card first",
+        body: `${left.entry.name} is registered, but not profiled. Pull GDP, GDP/person, growth, crime, overdose, affordability, and fiscal data before ranking it seriously.`
+      },
+      {
+        title: "Choose a profiled rival for a live benchmark",
+        body: `Suggested rivals are already registered, so the app can show who ${left.entry.name} should be compared against once the source adapters are filled.`
+      }
+    ];
+  }
+  if (!right.profile) {
+    return [
+      {
+        title: "Opponent data is the blocker",
+        body: `${right.entry.name} is registered but not profiled yet. The honest comparison is a scouting matchup until the opponent data is loaded.`
+      },
+      {
+        title: "Use peer groups to prioritize intake",
+        body: `Because ${right.entry.name} is tagged as ${right.entry.peerGroups.slice(0, 3).join(", ")}, start with GDP, growth, safety, and affordability metrics for that peer cluster.`
+      }
+    ];
+  }
+
+  const leftScore = scoreJurisdiction(left.profile);
+  const rightScore = scoreJurisdiction(right.profile);
+  const gaps = [
+    { title: "Prosperity gap", gap: rightScore.prosperity - leftScore.prosperity, lever: "raise GDP per person through productivity, investment, and higher-value employment." },
+    { title: "Growth gap", gap: rightScore.growth - leftScore.growth, lever: "improve real growth momentum without creating inflation or fiscal fragility." },
+    { title: "Safety gap", gap: (rightScore.safety ?? 0) - (leftScore.safety ?? 0), lever: "reduce violent/property crime and harmonize safety data so the win is defensible." },
+    { title: "Health gap", gap: (rightScore.health ?? 0) - (leftScore.health ?? 0), lever: "reduce overdose deaths and add broader health-outcome indicators." }
+  ]
+    .filter((item) => item.gap > 0)
+    .sort((a, b) => b.gap - a.gap);
+
+  if (gaps.length === 0) {
+    return [
+      {
+        title: "Defend the lead",
+        body: `${left.entry.name} is ahead on the profiled scoring categories. The next job is validating weak data rows so the lead survives scrutiny.`
+      },
+      {
+        title: "Do not let the model hide risk",
+        body: "Add affordability, fiscal capacity, education, and permitting speed before treating this as a regulator-grade ranking."
+      }
+    ];
+  }
+
+  return gaps.slice(0, 3).map((item) => ({
+    title: item.title,
+    body: `${left.entry.name} trails by ${item.gap} points. Fastest path: ${item.lever}`
+  }));
 }
 
 function MiniStat({ label, value, detail }: { label: string; value: string; detail: string }) {
