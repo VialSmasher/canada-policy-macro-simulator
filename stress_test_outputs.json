@@ -1,0 +1,503 @@
+{
+  "generatedAtUtc": "2026-06-14T17:42:28.776Z",
+  "baselineSourceQuality": "mixed",
+  "baseline": {
+    "realGdpGrowth": 2.409638554216853,
+    "headlineCpi": 2.8151774785801775,
+    "policyRate": 2.25,
+    "capexGrowth": 1.2,
+    "employmentGrowth": 0.7013311465405403,
+    "consumptionShare": 0.56,
+    "investmentShare": 0.23,
+    "governmentShare": 0.22,
+    "netExportsShare": -0.01,
+    "regionalInvestmentMultipliers": {
+      "Canada": 1,
+      "Alberta": 1.32,
+      "Ontario": 0.94,
+      "Quebec": 0.91,
+      "British Columbia": 1.04,
+      "Saskatchewan": 1.21,
+      "Atlantic": 0.86
+    },
+    "sourceQuality": "mixed",
+    "sourceNotes": [
+      "policy rate fetched from Bank of Canada Valet series V39079.",
+      "employment fetched from StatCan vector 2062811.",
+      "real GDP fetched from StatCan vector 2063744.",
+      "headline CPI fetched from StatCan vector 41690973.",
+      "capex fell back after all StatCan vector candidates failed."
+    ],
+    "observedAtUtc": "2026-06-14T17:42:28.772Z"
+  },
+  "comparisons": [
+    {
+      "scenario": {
+        "province": "Alberta",
+        "rateShockBps": 800,
+        "corporateTaxDeltaPp": -12,
+        "infrastructureSpendDeltaPct": -35,
+        "energyPriceDeltaPct": -50,
+        "consumptionTaxDeltaPp": 0,
+        "horizonMonths": 24
+      },
+      "draft1": {
+        "minGdpGrowth": -800.0354,
+        "maxGdpGrowth": -1.7454,
+        "minInflation": -42.6836,
+        "maxInflation": 1.3142,
+        "maxIdentityGap": 541.095777558,
+        "convergenceFailures": 0,
+        "stabilityScore": 0
+      },
+      "final": {
+        "minGdpGrowth": -16.4862,
+        "maxGdpGrowth": -3.3986,
+        "minInflation": -1,
+        "maxInflation": 1.3142,
+        "maxIdentityGap": 0,
+        "convergenceFailures": 0,
+        "stabilityScore": 88.89
+      },
+      "draft1Tail": [
+        {
+          "month": 22,
+          "province": "Alberta",
+          "policyRate": 71.9341,
+          "capexGrowth": -83.0545,
+          "employmentGrowth": -44.2916,
+          "headlineCpi": -38.2091,
+          "C": -57.2618,
+          "I": -145.1757,
+          "G": -34.4616,
+          "NX": -4.4348,
+          "Y": -696.1301,
+          "identityGap": 454.7962126619
+        },
+        {
+          "month": 23,
+          "province": "Alberta",
+          "policyRate": 72.3992,
+          "capexGrowth": -84.6853,
+          "employmentGrowth": -45.9214,
+          "headlineCpi": -40.4348,
+          "C": -59.2687,
+          "I": -150.8413,
+          "G": -35.955,
+          "NX": -4.1096,
+          "Y": -747.583,
+          "identityGap": 497.4084683104
+        },
+        {
+          "month": 24,
+          "province": "Alberta",
+          "policyRate": 72.784,
+          "capexGrowth": -86.2175,
+          "employmentGrowth": -47.5306,
+          "headlineCpi": -42.6836,
+          "C": -61.2597,
+          "I": -156.3738,
+          "G": -37.5314,
+          "NX": -3.7747,
+          "Y": -800.0354,
+          "identityGap": 541.095777558
+        }
+      ],
+      "finalTail": [
+        {
+          "month": 22,
+          "province": "Alberta",
+          "policyRate": 18,
+          "capexGrowth": -14,
+          "employmentGrowth": -8,
+          "headlineCpi": -1,
+          "C": -12.5281,
+          "I": -14.5208,
+          "G": 5.7983,
+          "NX": 5.8673,
+          "Y": -15.3834,
+          "identityGap": 0
+        },
+        {
+          "month": 23,
+          "province": "Alberta",
+          "policyRate": 18,
+          "capexGrowth": -14,
+          "employmentGrowth": -8,
+          "headlineCpi": -1,
+          "C": -12.663,
+          "I": -14.5475,
+          "G": 5.9888,
+          "NX": 5.8597,
+          "Y": -15.362,
+          "identityGap": 0
+        },
+        {
+          "month": 24,
+          "province": "Alberta",
+          "policyRate": 18,
+          "capexGrowth": -14,
+          "employmentGrowth": -8,
+          "headlineCpi": -1,
+          "C": -12.7854,
+          "I": -14.5715,
+          "G": 6.1702,
+          "NX": 5.8439,
+          "Y": -15.3428,
+          "identityGap": 0
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "province": "Ontario",
+        "rateShockBps": 800,
+        "corporateTaxDeltaPp": -12,
+        "infrastructureSpendDeltaPct": -25,
+        "energyPriceDeltaPct": 0,
+        "consumptionTaxDeltaPp": 4,
+        "horizonMonths": 24
+      },
+      "draft1": {
+        "minGdpGrowth": -782.8319,
+        "maxGdpGrowth": -1.8211,
+        "minInflation": -26.1045,
+        "maxInflation": 2.9701,
+        "maxIdentityGap": 540.8314553673,
+        "convergenceFailures": 0,
+        "stabilityScore": 0
+      },
+      "final": {
+        "minGdpGrowth": -16.263,
+        "maxGdpGrowth": -3.3675,
+        "minInflation": -1,
+        "maxInflation": 2.9701,
+        "maxIdentityGap": 0,
+        "convergenceFailures": 0,
+        "stabilityScore": 85.65
+      },
+      "draft1Tail": [
+        {
+          "month": 22,
+          "province": "Ontario",
+          "policyRate": 71.9341,
+          "capexGrowth": -73.3183,
+          "employmentGrowth": -37.3438,
+          "headlineCpi": -22.0814,
+          "C": -57.377,
+          "I": -137.2632,
+          "G": -29.712,
+          "NX": -1.0217,
+          "Y": -684.2465,
+          "identityGap": 458.8726030436
+        },
+        {
+          "month": 23,
+          "province": "Ontario",
+          "policyRate": 72.3992,
+          "capexGrowth": -75.1271,
+          "employmentGrowth": -38.824,
+          "headlineCpi": -24.0722,
+          "C": -59.1221,
+          "I": -142.4973,
+          "G": -31.2199,
+          "NX": -0.8733,
+          "Y": -733.117,
+          "identityGap": 499.4044608802
+        },
+        {
+          "month": 24,
+          "province": "Ontario",
+          "policyRate": 72.784,
+          "capexGrowth": -76.8479,
+          "employmentGrowth": -40.2973,
+          "headlineCpi": -26.1045,
+          "C": -60.8473,
+          "I": -147.626,
+          "G": -32.8101,
+          "NX": -0.7171,
+          "Y": -782.8319,
+          "identityGap": 540.8314553673
+        }
+      ],
+      "finalTail": [
+        {
+          "month": 22,
+          "province": "Ontario",
+          "policyRate": 18,
+          "capexGrowth": -14,
+          "employmentGrowth": -8,
+          "headlineCpi": -1,
+          "C": -14.5324,
+          "I": -14.6103,
+          "G": 5.8284,
+          "NX": 8.0026,
+          "Y": -15.3118,
+          "identityGap": 0
+        },
+        {
+          "month": 23,
+          "province": "Ontario",
+          "policyRate": 18,
+          "capexGrowth": -14,
+          "employmentGrowth": -8,
+          "headlineCpi": -1,
+          "C": -14.551,
+          "I": -14.6259,
+          "G": 5.9699,
+          "NX": 7.9077,
+          "Y": -15.2993,
+          "identityGap": 0
+        },
+        {
+          "month": 24,
+          "province": "Ontario",
+          "policyRate": 18,
+          "capexGrowth": -14,
+          "employmentGrowth": -8,
+          "headlineCpi": -1,
+          "C": -14.5679,
+          "I": -14.6399,
+          "G": 6.1112,
+          "NX": 7.8085,
+          "Y": -15.2881,
+          "identityGap": 0
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "province": "Quebec",
+        "rateShockBps": -300,
+        "corporateTaxDeltaPp": 5,
+        "infrastructureSpendDeltaPct": 80,
+        "energyPriceDeltaPct": 35,
+        "consumptionTaxDeltaPp": 0,
+        "horizonMonths": 24
+      },
+      "draft1": {
+        "minGdpGrowth": 7.8977,
+        "maxGdpGrowth": 584.6564,
+        "minInflation": 3.7571,
+        "maxInflation": 31.9337,
+        "maxIdentityGap": 403.5089707252,
+        "convergenceFailures": 0,
+        "stabilityScore": 0
+      },
+      "final": {
+        "minGdpGrowth": 9.4419,
+        "maxGdpGrowth": 17.2133,
+        "minInflation": 3.7571,
+        "maxInflation": 14,
+        "maxIdentityGap": 0,
+        "convergenceFailures": 0,
+        "stabilityScore": 83.54
+      },
+      "draft1Tail": [
+        {
+          "month": 22,
+          "province": "Quebec",
+          "policyRate": -24.1426,
+          "capexGrowth": 40.8115,
+          "employmentGrowth": 33.3603,
+          "headlineCpi": 29.4112,
+          "C": 37.6175,
+          "I": 77.9035,
+          "G": 55.4708,
+          "NX": 2.9139,
+          "Y": 520.9703,
+          "identityGap": 347.0645969517
+        },
+        {
+          "month": 23,
+          "province": "Quebec",
+          "policyRate": -24.3284,
+          "capexGrowth": 41.1228,
+          "employmentGrowth": 33.9773,
+          "headlineCpi": 30.6764,
+          "C": 38.6927,
+          "I": 79.9479,
+          "G": 56.263,
+          "NX": 2.683,
+          "Y": 552.7653,
+          "identityGap": 375.1787164445
+        },
+        {
+          "month": 24,
+          "province": "Quebec",
+          "policyRate": -24.484,
+          "capexGrowth": 41.3885,
+          "employmentGrowth": 34.5594,
+          "headlineCpi": 31.9337,
+          "C": 39.7419,
+          "I": 81.8953,
+          "G": 57.0634,
+          "NX": 2.4469,
+          "Y": 584.6564,
+          "identityGap": 403.5089707252
+        }
+      ],
+      "finalTail": [
+        {
+          "month": 22,
+          "province": "Quebec",
+          "policyRate": -0.5,
+          "capexGrowth": 14,
+          "employmentGrowth": 8,
+          "headlineCpi": 14,
+          "C": -1.4615,
+          "I": 14.5213,
+          "G": 12.2563,
+          "NX": -9.9331,
+          "Y": 15.383,
+          "identityGap": 0
+        },
+        {
+          "month": 23,
+          "province": "Quebec",
+          "policyRate": -0.5,
+          "capexGrowth": 13.9689,
+          "employmentGrowth": 8,
+          "headlineCpi": 14,
+          "C": -1.3383,
+          "I": 14.5546,
+          "G": 11.9667,
+          "NX": -9.8266,
+          "Y": 15.3564,
+          "identityGap": 0
+        },
+        {
+          "month": 24,
+          "province": "Quebec",
+          "policyRate": -0.5,
+          "capexGrowth": 13.8941,
+          "employmentGrowth": 8,
+          "headlineCpi": 14,
+          "C": -1.2076,
+          "I": 14.5846,
+          "G": 11.6633,
+          "NX": -9.7079,
+          "Y": 15.3324,
+          "identityGap": 0
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "province": "Canada",
+        "rateShockBps": 450,
+        "corporateTaxDeltaPp": 0,
+        "infrastructureSpendDeltaPct": 120,
+        "energyPriceDeltaPct": 100,
+        "consumptionTaxDeltaPp": 0,
+        "horizonMonths": 24
+      },
+      "draft1": {
+        "minGdpGrowth": 5.9349,
+        "maxGdpGrowth": 121.5105,
+        "minInflation": 4.8996,
+        "maxInflation": 22.5226,
+        "maxIdentityGap": 77.357905,
+        "convergenceFailures": 0,
+        "stabilityScore": 0
+      },
+      "final": {
+        "minGdpGrowth": -3.6145,
+        "maxGdpGrowth": 15.2381,
+        "minInflation": 4.8996,
+        "maxInflation": 14,
+        "maxIdentityGap": 0,
+        "convergenceFailures": 0,
+        "stabilityScore": 72.93
+      },
+      "draft1Tail": [
+        {
+          "month": 22,
+          "province": "Canada",
+          "policyRate": 41.3642,
+          "capexGrowth": -15.833,
+          "employmentGrowth": 13.8713,
+          "headlineCpi": 22.4999,
+          "C": -0.7853,
+          "I": -24.7011,
+          "G": 66.7277,
+          "NX": 7.4659,
+          "Y": 121.509,
+          "identityGap": 72.8018252402
+        },
+        {
+          "month": 23,
+          "province": "Canada",
+          "policyRate": 41.6222,
+          "capexGrowth": -17.3541,
+          "employmentGrowth": 13.2091,
+          "headlineCpi": 22.4108,
+          "C": -0.9735,
+          "I": -27.3153,
+          "G": 66.3335,
+          "NX": 7.1425,
+          "Y": 120.6303,
+          "identityGap": 75.4430301848
+        },
+        {
+          "month": 24,
+          "province": "Canada",
+          "policyRate": 41.8351,
+          "capexGrowth": -18.8531,
+          "employmentGrowth": 12.4941,
+          "headlineCpi": 22.2574,
+          "C": -1.1881,
+          "I": -29.9735,
+          "G": 65.852,
+          "NX": 6.8168,
+          "Y": 118.865,
+          "identityGap": 77.357905
+        }
+      ],
+      "finalTail": [
+        {
+          "month": 22,
+          "province": "Canada",
+          "policyRate": 18,
+          "capexGrowth": -3.7626,
+          "employmentGrowth": 7.9119,
+          "headlineCpi": 14,
+          "C": -5.993,
+          "I": -10.2067,
+          "G": 14.2853,
+          "NX": 4.7371,
+          "Y": 2.8226,
+          "identityGap": 0
+        },
+        {
+          "month": 23,
+          "province": "Canada",
+          "policyRate": 18,
+          "capexGrowth": -4.4404,
+          "employmentGrowth": 7.7971,
+          "headlineCpi": 14,
+          "C": -6.5322,
+          "I": -11.6242,
+          "G": 13.9724,
+          "NX": 4.0794,
+          "Y": -0.1045,
+          "identityGap": 0
+        },
+        {
+          "month": 24,
+          "province": "Canada",
+          "policyRate": 18,
+          "capexGrowth": -5.1116,
+          "employmentGrowth": 7.6407,
+          "headlineCpi": 14,
+          "C": -7.1901,
+          "I": -13.1605,
+          "G": 13.3986,
+          "NX": 3.3376,
+          "Y": -3.6145,
+          "identityGap": 0
+        }
+      ]
+    }
+  ]
+}

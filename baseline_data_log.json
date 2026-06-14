@@ -1,0 +1,29 @@
+{
+  "realGdpGrowth": 2.409638554216853,
+  "headlineCpi": 2.8151774785801775,
+  "policyRate": 2.25,
+  "capexGrowth": 1.2,
+  "employmentGrowth": 0.7013311465405403,
+  "consumptionShare": 0.56,
+  "investmentShare": 0.23,
+  "governmentShare": 0.22,
+  "netExportsShare": -0.01,
+  "regionalInvestmentMultipliers": {
+    "Canada": 1,
+    "Alberta": 1.32,
+    "Ontario": 0.94,
+    "Quebec": 0.91,
+    "British Columbia": 1.04,
+    "Saskatchewan": 1.21,
+    "Atlantic": 0.86
+  },
+  "sourceQuality": "mixed",
+  "sourceNotes": [
+    "policy rate fetched from Bank of Canada Valet series V39079.",
+    "employment fetched from StatCan vector 2062811.",
+    "real GDP fetched from StatCan vector 2063744.",
+    "headline CPI fetched from StatCan vector 41690973.",
+    "capex fell back after all StatCan vector candidates failed."
+  ],
+  "observedAtUtc": "2026-06-14T17:42:28.772Z"
+}

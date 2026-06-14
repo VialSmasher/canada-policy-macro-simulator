@@ -1,0 +1,4 @@
+node_modules/
+dist/
+sites_saved_version/
+*.tsbuildinfo
