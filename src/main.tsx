@@ -18,6 +18,13 @@ import {
 } from "lucide-react";
 import { buildBaseline, fallbackBaseline } from "./lib/dataSources";
 import { profileFor, teachingScenarios, type TeachingScenario } from "./lib/education";
+import {
+  gdpCadEquivalent,
+  gdpPerCapitaCadEquivalent,
+  jurisdictions,
+  scoreJurisdiction,
+  type JurisdictionProfile
+} from "./lib/jurisdictions";
 import { runPolicySimulation, runStressAudit } from "./lib/svar";
 import type { MacroBaseline, PolicyScenario, Province, SimulationRow, StressComparison } from "./lib/types";
 import "./styles.css";
@@ -35,6 +42,7 @@ const defaultScenario: PolicyScenario = {
 };
 
 function App() {
+  const [activeView, setActiveView] = useState<"scoreboard" | "simulator">("scoreboard");
   const [baseline, setBaseline] = useState<MacroBaseline>(fallbackBaseline(["Live baseline has not loaded yet."]));
   const [scenario, setScenario] = useState<PolicyScenario>(defaultScenario);
   const [selectedScenarioId, setSelectedScenarioId] = useState("ab-pipeline");
@@ -117,123 +125,90 @@ function App() {
         </div>
       </header>
 
-      <section className="story-band">
-        <EconomySnapshot economy={economy} impact={impact} />
-        <ScenarioCards selectedScenarioId={selectedScenarioId} onSelect={applyTeachingScenario} />
-      </section>
+      <div className="view-switch">
+        <button className={activeView === "scoreboard" ? "active" : ""} onClick={() => setActiveView("scoreboard")}>
+          Scoreboard
+        </button>
+        <button className={activeView === "simulator" ? "active" : ""} onClick={() => setActiveView("simulator")}>
+          Simulator
+        </button>
+      </div>
 
-      <section className="workspace">
-        <aside className="control-rail">
-          <div className="panel-title">
-            <Gauge size={18} />
-            Scenario controls
-          </div>
-          <label className="field">
-            <span>Province / region</span>
-            <select value={scenario.province} onChange={(event) => updateScenario("province", event.target.value as Province)}>
-              {provinces.map((province) => (
-                <option key={province} value={province}>
-                  {province}
-                </option>
-              ))}
-            </select>
-          </label>
-          <Slider
-            label="Policy rate shock"
-            value={scenario.rateShockBps}
-            min={-400}
-            max={900}
-            step={25}
-            suffix="bps"
-            onChange={(value) => updateScenario("rateShockBps", value)}
-          />
-          <Slider
-            label="Corporate tax delta"
-            value={scenario.corporateTaxDeltaPp}
-            min={-15}
-            max={10}
-            step={1}
-            suffix="pp"
-            onChange={(value) => updateScenario("corporateTaxDeltaPp", value)}
-          />
-          <Slider
-            label="Infrastructure spend"
-            value={scenario.infrastructureSpendDeltaPct}
-            min={-50}
-            max={150}
-            step={5}
-            suffix="%"
-            onChange={(value) => updateScenario("infrastructureSpendDeltaPct", value)}
-          />
-          <Slider
-            label="Energy price shock"
-            value={scenario.energyPriceDeltaPct}
-            min={-75}
-            max={125}
-            step={5}
-            suffix="%"
-            onChange={(value) => updateScenario("energyPriceDeltaPct", value)}
-          />
-          <Slider
-            label="Consumption tax delta"
-            value={scenario.consumptionTaxDeltaPp}
-            min={-5}
-            max={8}
-            step={1}
-            suffix="pp"
-            onChange={(value) => updateScenario("consumptionTaxDeltaPp", value)}
-          />
-          <Slider
-            label="Horizon"
-            value={scenario.horizonMonths}
-            min={6}
-            max={60}
-            step={1}
-            suffix="months"
-            onChange={(value) => updateScenario("horizonMonths", value)}
-          />
-        </aside>
+      {activeView === "scoreboard" ? (
+        <JurisdictionScoreboard />
+      ) : (
+        <>
+          <section className="story-band">
+            <EconomySnapshot economy={economy} impact={impact} />
+            <ScenarioCards selectedScenarioId={selectedScenarioId} onSelect={applyTeachingScenario} />
+          </section>
 
-        <section className="analysis-area">
-          <div className="metrics-grid">
-            <Metric label="GDP dollar swing" value={`${moneySigned(impact.peakGdpDeltaBillion)}B`} Icon={Activity} />
-            <Metric label="Revenue signal" value={`${moneySigned(impact.revenueDeltaBillion)}B`} Icon={Landmark} />
-            <Metric label="Retail spillover" value={`${moneySigned(impact.retailDeltaBillion)}B`} Icon={Store} />
-            <Metric label="Game score" value={`${impact.gameScore}/100`} Icon={Sparkles} />
-          </div>
+          <section className="workspace">
+            <aside className="control-rail">
+              <div className="panel-title">
+                <Gauge size={18} />
+                Scenario controls
+              </div>
+              <label className="field">
+                <span>Province / region</span>
+                <select value={scenario.province} onChange={(event) => updateScenario("province", event.target.value as Province)}>
+                  {provinces.map((province) => (
+                    <option key={province} value={province}>
+                      {province}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Slider label="Policy rate shock" value={scenario.rateShockBps} min={-400} max={900} step={25} suffix="bps" onChange={(value) => updateScenario("rateShockBps", value)} />
+              <Slider label="Corporate tax delta" value={scenario.corporateTaxDeltaPp} min={-15} max={10} step={1} suffix="pp" onChange={(value) => updateScenario("corporateTaxDeltaPp", value)} />
+              <Slider label="Infrastructure spend" value={scenario.infrastructureSpendDeltaPct} min={-50} max={150} step={5} suffix="%" onChange={(value) => updateScenario("infrastructureSpendDeltaPct", value)} />
+              <Slider label="Energy price shock" value={scenario.energyPriceDeltaPct} min={-75} max={125} step={5} suffix="%" onChange={(value) => updateScenario("energyPriceDeltaPct", value)} />
+              <Slider label="Consumption tax delta" value={scenario.consumptionTaxDeltaPp} min={-5} max={8} step={1} suffix="pp" onChange={(value) => updateScenario("consumptionTaxDeltaPp", value)} />
+              <Slider label="Horizon" value={scenario.horizonMonths} min={6} max={60} step={1} suffix="months" onChange={(value) => updateScenario("horizonMonths", value)} />
+            </aside>
 
-          <div className="two-column story-panels">
-            <CausalPanel selectedScenario={selectedScenario} economy={economy} impact={impact} />
-            <Scorecard impact={impact} />
-          </div>
+            <section className="analysis-area">
+              <div className="metrics-grid">
+                <Metric label="GDP dollar swing" value={`${moneySigned(impact.peakGdpDeltaBillion)}B`} Icon={Activity} />
+                <Metric label="Revenue signal" value={`${moneySigned(impact.revenueDeltaBillion)}B`} Icon={Landmark} />
+                <Metric label="Retail spillover" value={`${moneySigned(impact.retailDeltaBillion)}B`} Icon={Store} />
+                <Metric label="Game score" value={`${impact.gameScore}/100`} Icon={Sparkles} />
+              </div>
 
-          <div className="metrics-grid compact-metrics">
-            <Metric label="GDP range" value={`${fmt(result.metrics.minGdpGrowth)} to ${fmt(result.metrics.maxGdpGrowth)}%`} Icon={Activity} />
-            <Metric label="CPI range" value={`${fmt(result.metrics.minInflation)} to ${fmt(result.metrics.maxInflation)}%`} Icon={BarChart3} />
-            <Metric label="Identity gap" value={result.metrics.maxIdentityGap.toExponential(1)} Icon={ShieldCheck} />
-            <Metric label="Stability score" value={fmt(result.metrics.stabilityScore)} Icon={Gauge} />
-          </div>
+              <div className="two-column story-panels">
+                <CausalPanel selectedScenario={selectedScenario} economy={economy} impact={impact} />
+                <Scorecard impact={impact} />
+              </div>
 
-          <div className="chart-band">
-            <LineChart
-              rows={result.rows}
-              series={[
-                { key: "Y", label: "GDP growth", color: "#12695f" },
-                { key: "headlineCpi", label: "CPI", color: "#aa3f21" },
-                { key: "policyRate", label: "Policy rate", color: "#3d5a99" },
-                { key: "capexGrowth", label: "CapEx", color: "#80562a" }
-              ]}
-            />
-          </div>
+              <div className="metrics-grid compact-metrics">
+                <Metric label="GDP range" value={`${fmt(result.metrics.minGdpGrowth)} to ${fmt(result.metrics.maxGdpGrowth)}%`} Icon={Activity} />
+                <Metric label="CPI range" value={`${fmt(result.metrics.minInflation)} to ${fmt(result.metrics.maxInflation)}%`} Icon={BarChart3} />
+                <Metric label="Identity gap" value={result.metrics.maxIdentityGap.toExponential(1)} Icon={ShieldCheck} />
+                <Metric label="Stability score" value={fmt(result.metrics.stabilityScore)} Icon={Gauge} />
+              </div>
 
-          <div className="two-column">
-            <BaselinePanel baseline={baseline} loading={loadingBaseline} error={baselineError} />
-            <StressPanel stress={stress} />
-          </div>
+              <div className="chart-band">
+                <LineChart
+                  rows={result.rows}
+                  series={[
+                    { key: "Y", label: "GDP growth", color: "#12695f" },
+                    { key: "headlineCpi", label: "CPI", color: "#aa3f21" },
+                    { key: "policyRate", label: "Policy rate", color: "#3d5a99" },
+                    { key: "capexGrowth", label: "CapEx", color: "#80562a" }
+                  ]}
+                />
+              </div>
 
-          <DataTable rows={result.rows} />
-        </section>
-      </section>
+              <div className="two-column">
+                <BaselinePanel baseline={baseline} loading={loadingBaseline} error={baselineError} />
+                <StressPanel stress={stress} />
+              </div>
+
+              <DataTable rows={result.rows} />
+            </section>
+          </section>
+        </>
+      )}
     </main>
   );
 }
@@ -251,6 +226,155 @@ type ImpactEstimate = {
   resilienceScore: number;
   gameScore: number;
 };
+
+function JurisdictionScoreboard() {
+  const [selectedId, setSelectedId] = useState("alberta");
+  const selected = jurisdictions.find((item) => item.id === selectedId) ?? jurisdictions[0];
+  const ranked = [...jurisdictions].sort((a, b) => scoreJurisdiction(b).overall - scoreJurisdiction(a).overall);
+  const selectedScore = scoreJurisdiction(selected);
+
+  return (
+    <section className="scoreboard-shell">
+      <div className="scoreboard-hero">
+        <div>
+          <div className="panel-title">
+            <BarChart3 size={18} />
+            Jurisdiction scoreboard
+          </div>
+          <h2>Compare provinces and states like teams</h2>
+          <p>
+            This first pass ranks economic scale, prosperity, growth, safety, and health signals. It deliberately marks weak comparisons
+            instead of pretending every dataset is measured the same way.
+          </p>
+        </div>
+        <div className="protocol-card">
+          <strong>Data protocol</strong>
+          <span>Comparable: same-family metric</span>
+          <span>Directional: useful, but different method</span>
+          <span>Limited: placeholder until harmonized</span>
+        </div>
+      </div>
+
+      <div className="scoreboard-grid">
+        <section className="ranking-panel">
+          {ranked.map((item, index) => {
+            const score = scoreJurisdiction(item);
+            return (
+              <button className={`rank-card ${selectedId === item.id ? "active" : ""}`} key={item.id} onClick={() => setSelectedId(item.id)}>
+                <span className="rank-number">#{index + 1}</span>
+                <div>
+                  <strong>{item.name}</strong>
+                  <small>
+                    {item.kind} · {item.country}
+                  </small>
+                </div>
+                <b>{score.overall}</b>
+              </button>
+            );
+          })}
+        </section>
+
+        <section className="comparison-panel">
+          <div className="comparison-header">
+            <div>
+              <h2>{selected.name}</h2>
+              <p>
+                {selected.kind} in {selected.country}
+              </p>
+            </div>
+            <div className="score-pill">{selectedScore.overall}/100</div>
+          </div>
+
+          <div className="comparison-metrics">
+            <CompareMetric label="GDP" value={`${currency(gdpCadEquivalent(selected))}B CAD eq.`} detail={`${currency(selected.gdpBillionLocal)}B ${selected.currency}`} quality="comparable" />
+            <CompareMetric label="GDP / person" value={`${numberCompact(gdpPerCapitaCadEquivalent(selected))} CAD eq.`} detail={`${numberCompact(selected.gdpPerCapitaLocal)} ${selected.currency}`} quality="comparable" />
+            <CompareMetric label="Growth" value={selected.realGrowthPct === null ? "Needs live series" : `${fmt(selected.realGrowthPct)}%`} detail={selected.nominalGrowthPct === null ? "real GDP preferred" : `${fmt(selected.nominalGrowthPct)}% nominal`} quality={selected.realGrowthPct === null ? "limited" : "comparable"} />
+            <CompareMetric label="Violent crime" value={metricValue(selected.violentCrime)} detail={selected.violentCrime.source} quality={selected.violentCrime.quality} />
+            <CompareMetric label="Property crime" value={metricValue(selected.propertyCrime)} detail={selected.propertyCrime.source} quality={selected.propertyCrime.quality} />
+            <CompareMetric label="Overdose deaths" value={metricValue(selected.overdoseDeaths)} detail={selected.overdoseDeaths.source} quality={selected.overdoseDeaths.quality} />
+          </div>
+
+          <div className="score-breakdown">
+            <ScoreBar label="Prosperity" value={selectedScore.prosperity} />
+            <ScoreBar label="Growth" value={selectedScore.growth} />
+            <ScoreBar label="Safety" value={selectedScore.safety ?? 0} />
+            <ScoreBar label="Health" value={selectedScore.health ?? 0} />
+          </div>
+
+          <div className="model-fit">
+            <strong>What matters here</strong>
+            <div>
+              {selected.modelFit.map((item) => (
+                <span key={item}>{item}</span>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section className="comparison-table-panel">
+        <div className="panel-title">
+          <ShieldCheck size={18} />
+          Cross-border table
+        </div>
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Place</th>
+                <th>Score</th>
+                <th>GDP CAD eq.</th>
+                <th>GDP/person CAD eq.</th>
+                <th>Growth</th>
+                <th>Violent crime</th>
+                <th>Property crime</th>
+                <th>Overdose deaths</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ranked.map((item) => {
+                const score = scoreJurisdiction(item);
+                return (
+                  <tr key={item.id}>
+                    <td>{item.name}</td>
+                    <td>{score.overall}</td>
+                    <td>{currency(gdpCadEquivalent(item))}B</td>
+                    <td>{numberCompact(gdpPerCapitaCadEquivalent(item))}</td>
+                    <td>{item.realGrowthPct === null ? "TBD" : `${fmt(item.realGrowthPct)}%`}</td>
+                    <td>{metricValue(item.violentCrime)}</td>
+                    <td>{metricValue(item.propertyCrime)}</td>
+                    <td>{metricValue(item.overdoseDeaths)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  );
+}
+
+function CompareMetric({
+  label,
+  value,
+  detail,
+  quality
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  quality: "comparable" | "directional" | "limited";
+}) {
+  return (
+    <article className="compare-metric">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{detail}</small>
+      <i className={`quality-dot ${quality}`}>{quality}</i>
+    </article>
+  );
+}
 
 function EconomySnapshot({ economy, impact }: { economy: ReturnType<typeof profileFor>; impact: ImpactEstimate }) {
   return (
@@ -625,6 +749,15 @@ function currency(value: number) {
 function moneySigned(value: number) {
   const sign = value > 0 ? "+" : "";
   return `${sign}${currency(value)}`;
+}
+
+function numberCompact(value: number) {
+  return new Intl.NumberFormat("en-CA", { maximumFractionDigits: 0 }).format(Math.round(value));
+}
+
+function metricValue(metric: JurisdictionProfile["violentCrime"]) {
+  if (metric.value === null) return "TBD";
+  return `${fmt(metric.value)} ${metric.unit}`;
 }
 
 function estimateImpact(

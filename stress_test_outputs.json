@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-06-14T18:19:44.255Z",
+  "generatedAtUtc": "2026-06-14T18:31:34.867Z",
   "baselineSourceQuality": "mixed",
   "baseline": {
     "realGdpGrowth": 2.409638554216853,
@@ -23,12 +23,12 @@
     "sourceQuality": "mixed",
     "sourceNotes": [
       "policy rate fetched from Bank of Canada Valet series V39079.",
-      "employment fetched from StatCan vector 2062811.",
       "headline CPI fetched from StatCan vector 41690973.",
+      "employment fetched from StatCan vector 2062811.",
       "real GDP fetched from StatCan vector 2063744.",
       "capex fell back after all StatCan vector candidates failed."
     ],
-    "observedAtUtc": "2026-06-14T18:19:44.252Z"
+    "observedAtUtc": "2026-06-14T18:31:34.864Z"
   },
   "comparisons": [
     {
