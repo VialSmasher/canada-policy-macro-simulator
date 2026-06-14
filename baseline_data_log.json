@@ -20,10 +20,10 @@
   "sourceQuality": "mixed",
   "sourceNotes": [
     "policy rate fetched from Bank of Canada Valet series V39079.",
+    "real GDP fetched from StatCan vector 2063744.",
     "headline CPI fetched from StatCan vector 41690973.",
     "employment fetched from StatCan vector 2062811.",
-    "real GDP fetched from StatCan vector 2063744.",
     "capex fell back after all StatCan vector candidates failed."
   ],
-  "observedAtUtc": "2026-06-14T18:31:34.864Z"
+  "observedAtUtc": "2026-06-14T18:34:14.155Z"
 }
