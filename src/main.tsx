@@ -4,14 +4,20 @@ import {
   Activity,
   AlertTriangle,
   BarChart3,
+  Building2,
   Download,
+  Factory,
   Gauge,
   Landmark,
+  Pickaxe,
   RefreshCw,
   ShieldCheck,
+  Sparkles,
+  Store,
   type LucideIcon
 } from "lucide-react";
 import { buildBaseline, fallbackBaseline } from "./lib/dataSources";
+import { profileFor, teachingScenarios, type TeachingScenario } from "./lib/education";
 import { runPolicySimulation, runStressAudit } from "./lib/svar";
 import type { MacroBaseline, PolicyScenario, Province, SimulationRow, StressComparison } from "./lib/types";
 import "./styles.css";
@@ -31,11 +37,34 @@ const defaultScenario: PolicyScenario = {
 function App() {
   const [baseline, setBaseline] = useState<MacroBaseline>(fallbackBaseline(["Live baseline has not loaded yet."]));
   const [scenario, setScenario] = useState<PolicyScenario>(defaultScenario);
+  const [selectedScenarioId, setSelectedScenarioId] = useState("ab-pipeline");
   const [loadingBaseline, setLoadingBaseline] = useState(true);
   const [baselineError, setBaselineError] = useState<string | null>(null);
 
   const result = useMemo(() => runPolicySimulation(scenario, baseline, true), [scenario, baseline]);
+  const neutralScenario = useMemo<PolicyScenario>(
+    () => ({
+      province: scenario.province,
+      rateShockBps: 0,
+      corporateTaxDeltaPp: 0,
+      infrastructureSpendDeltaPct: 0,
+      energyPriceDeltaPct: 0,
+      consumptionTaxDeltaPp: 0,
+      horizonMonths: scenario.horizonMonths
+    }),
+    [scenario.province, scenario.horizonMonths]
+  );
+  const neutralResult = useMemo(() => runPolicySimulation(neutralScenario, baseline, true), [neutralScenario, baseline]);
   const stress = useMemo(() => runStressAudit(baseline), [baseline]);
+  const economy = useMemo(() => profileFor(scenario.province), [scenario.province]);
+  const selectedScenario = useMemo(
+    () => teachingScenarios.find((item) => item.id === selectedScenarioId),
+    [selectedScenarioId]
+  );
+  const impact = useMemo(
+    () => estimateImpact(result.rows, neutralResult.rows, economy.nominalGdpBillion, selectedScenario),
+    [result.rows, neutralResult.rows, economy.nominalGdpBillion, selectedScenario]
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -57,7 +86,13 @@ function App() {
   }
 
   function updateScenario<K extends keyof PolicyScenario>(key: K, value: PolicyScenario[K]) {
+    setSelectedScenarioId("custom");
     setScenario((current) => ({ ...current, [key]: value }));
+  }
+
+  function applyTeachingScenario(item: TeachingScenario) {
+    setSelectedScenarioId(item.id);
+    setScenario(item.scenario);
   }
 
   return (
@@ -81,6 +116,11 @@ function App() {
           </button>
         </div>
       </header>
+
+      <section className="story-band">
+        <EconomySnapshot economy={economy} impact={impact} />
+        <ScenarioCards selectedScenarioId={selectedScenarioId} onSelect={applyTeachingScenario} />
+      </section>
 
       <section className="workspace">
         <aside className="control-rail">
@@ -156,6 +196,18 @@ function App() {
 
         <section className="analysis-area">
           <div className="metrics-grid">
+            <Metric label="GDP dollar swing" value={`${moneySigned(impact.peakGdpDeltaBillion)}B`} Icon={Activity} />
+            <Metric label="Revenue signal" value={`${moneySigned(impact.revenueDeltaBillion)}B`} Icon={Landmark} />
+            <Metric label="Retail spillover" value={`${moneySigned(impact.retailDeltaBillion)}B`} Icon={Store} />
+            <Metric label="Game score" value={`${impact.gameScore}/100`} Icon={Sparkles} />
+          </div>
+
+          <div className="two-column story-panels">
+            <CausalPanel selectedScenario={selectedScenario} economy={economy} impact={impact} />
+            <Scorecard impact={impact} />
+          </div>
+
+          <div className="metrics-grid compact-metrics">
             <Metric label="GDP range" value={`${fmt(result.metrics.minGdpGrowth)} to ${fmt(result.metrics.maxGdpGrowth)}%`} Icon={Activity} />
             <Metric label="CPI range" value={`${fmt(result.metrics.minInflation)} to ${fmt(result.metrics.maxInflation)}%`} Icon={BarChart3} />
             <Metric label="Identity gap" value={result.metrics.maxIdentityGap.toExponential(1)} Icon={ShieldCheck} />
@@ -183,6 +235,173 @@ function App() {
         </section>
       </section>
     </main>
+  );
+}
+
+type ImpactEstimate = {
+  finalGdpDeltaBillion: number;
+  peakGdpDeltaBillion: number;
+  directInvestmentBillion: number;
+  revenueDeltaBillion: number;
+  retailDeltaBillion: number;
+  confidence: number;
+  growthScore: number;
+  affordabilityScore: number;
+  fiscalScore: number;
+  resilienceScore: number;
+  gameScore: number;
+};
+
+function EconomySnapshot({ economy, impact }: { economy: ReturnType<typeof profileFor>; impact: ImpactEstimate }) {
+  return (
+    <section className="economy-snapshot">
+      <div className="panel-title">
+        <Building2 size={18} />
+        Economy at a glance
+      </div>
+      <div className="snapshot-main">
+        <div>
+          <span>{economy.province} GDP</span>
+          <strong>{currency(economy.nominalGdpBillion)}B</strong>
+          <small>2024 current dollars</small>
+        </div>
+        <div>
+          <span>Real growth</span>
+          <strong>{fmt(economy.realGrowth2024)}%</strong>
+          <small>latest annual provincial account</small>
+        </div>
+        <div>
+          <span>Scenario swing</span>
+          <strong className={impact.peakGdpDeltaBillion >= 0 ? "positive" : "negative"}>{moneySigned(impact.peakGdpDeltaBillion)}B</strong>
+          <small>model-implied GDP difference</small>
+        </div>
+      </div>
+      <div className="texture-list">
+        {economy.texture.map((item) => (
+          <span key={item}>{item}</span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ScenarioCards({
+  selectedScenarioId,
+  onSelect
+}: {
+  selectedScenarioId: string;
+  onSelect: (scenario: TeachingScenario) => void;
+}) {
+  return (
+    <section className="scenario-deck">
+      <div className="panel-title">
+        <Pickaxe size={18} />
+        Choose a real-world move
+      </div>
+      <div className="scenario-card-grid">
+        {teachingScenarios.map((item) => (
+          <button
+            className={`scenario-card ${selectedScenarioId === item.id ? "active" : ""}`}
+            key={item.id}
+            onClick={() => onSelect(item)}
+          >
+            <strong>{item.shortTitle}</strong>
+            <span>{item.summary}</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CausalPanel({
+  selectedScenario,
+  economy,
+  impact
+}: {
+  selectedScenario?: TeachingScenario;
+  economy: ReturnType<typeof profileFor>;
+  impact: ImpactEstimate;
+}) {
+  const title = selectedScenario?.title ?? "Custom policy mix";
+  const channels =
+    selectedScenario?.channels ??
+    [
+      "Your manual slider mix changes borrowing costs, investment, prices, and expenditure components.",
+      "The model translates those shocks into a 24-month path and reconciles GDP back to spending identity.",
+      "Use the advanced levers to test whether growth comes with inflation, fiscal pressure, or investment drag."
+    ];
+  const risks =
+    selectedScenario?.risks ??
+    [
+      "Manual scenarios can combine assumptions that would be politically or operationally hard to execute.",
+      "Large shocks show direction and tradeoffs, not a precise forecast."
+    ];
+
+  return (
+    <article className="info-panel causal-panel">
+      <div className="panel-title">
+        <Factory size={18} />
+        What happens next
+      </div>
+      <h2>{title}</h2>
+      <p>
+        In a {currency(economy.nominalGdpBillion)}B economy, this setup implies a peak GDP swing of{" "}
+        <b className={impact.peakGdpDeltaBillion >= 0 ? "positive" : "negative"}>{moneySigned(impact.peakGdpDeltaBillion)}B</b>.
+      </p>
+      <ol className="chain-list">
+        {channels.map((channel) => (
+          <li key={channel}>{channel}</li>
+        ))}
+      </ol>
+      <div className="risk-box">
+        <strong>Watch-outs</strong>
+        <ul>
+          {risks.map((risk) => (
+            <li key={risk}>{risk}</li>
+          ))}
+        </ul>
+      </div>
+    </article>
+  );
+}
+
+function Scorecard({ impact }: { impact: ImpactEstimate }) {
+  return (
+    <article className="info-panel score-panel">
+      <div className="panel-title">
+        <Sparkles size={18} />
+        Age of Alberta scorecard
+      </div>
+      <div className="score-hero">
+        <strong>{impact.gameScore}</strong>
+        <span>/100</span>
+      </div>
+      <ScoreBar label="Growth" value={impact.growthScore} />
+      <ScoreBar label="Affordability" value={impact.affordabilityScore} />
+      <ScoreBar label="Fiscal room" value={impact.fiscalScore} />
+      <ScoreBar label="Resilience" value={impact.resilienceScore} />
+      <div className="impact-ledger">
+        <span>Direct investment</span>
+        <b>{currency(impact.directInvestmentBillion)}B</b>
+        <span>Government revenue signal</span>
+        <b>{moneySigned(impact.revenueDeltaBillion)}B</b>
+        <span>Main-street spillover</span>
+        <b>{moneySigned(impact.retailDeltaBillion)}B</b>
+      </div>
+    </article>
+  );
+}
+
+function ScoreBar({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="score-row">
+      <span>{label}</span>
+      <div className="score-track">
+        <i style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
+      </div>
+      <b>{value}</b>
+    </div>
   );
 }
 
@@ -397,6 +616,65 @@ function downloadJson(filename: string, data: unknown) {
 
 function fmt(value: number) {
   return new Intl.NumberFormat("en-CA", { maximumFractionDigits: 2, minimumFractionDigits: 0 }).format(value);
+}
+
+function currency(value: number) {
+  return new Intl.NumberFormat("en-CA", { maximumFractionDigits: 1, minimumFractionDigits: 0 }).format(value);
+}
+
+function moneySigned(value: number) {
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${currency(value)}`;
+}
+
+function estimateImpact(
+  rows: SimulationRow[],
+  neutralRows: SimulationRow[],
+  nominalGdpBillion: number,
+  selectedScenario?: TeachingScenario
+): ImpactEstimate {
+  const deltas = rows.map((row, index) => row.Y - (neutralRows[index]?.Y ?? 0));
+  const finalGrowthDelta = deltas[deltas.length - 1] ?? 0;
+  const peakGrowthDelta = deltas.reduce((best, value) => (Math.abs(value) > Math.abs(best) ? value : best), 0);
+  const directInvestmentBillion = selectedScenario?.directInvestmentBillion ?? Math.max(0, peakGrowthDelta * nominalGdpBillion * 0.01 * 0.25);
+  const finalGdpDeltaBillion = nominalGdpBillion * (finalGrowthDelta / 100);
+  const peakGdpDeltaBillion = nominalGdpBillion * (peakGrowthDelta / 100);
+  const revenueDeltaBillion =
+    Math.max(0, directInvestmentBillion * (selectedScenario?.governmentTakeRate ?? 0.09)) + Math.max(0, peakGdpDeltaBillion) * 0.075;
+  const retailDeltaBillion =
+    Math.max(0, directInvestmentBillion * (selectedScenario?.retailSpilloverRate ?? 0.16)) + Math.max(0, peakGdpDeltaBillion) * 0.05;
+  const cpiPeak = Math.max(...rows.map((row) => row.headlineCpi));
+  const cpiPenalty = Math.max(0, cpiPeak - 3) * 8;
+  const identityPenalty = Math.max(...rows.map((row) => row.identityGap)) * 100;
+  const confidence = selectedScenario?.confidenceEffect ?? 50;
+  const growthScore = clampScore(50 + peakGrowthDelta * 4 + directInvestmentBillion * 0.6);
+  const affordabilityScore = clampScore(78 - cpiPenalty - Math.max(0, rows[rows.length - 1]?.policyRate ?? 0) * 1.2);
+  const fiscalScore = clampScore(48 + revenueDeltaBillion * 2 - Math.max(0, -finalGdpDeltaBillion) * 0.9);
+  const resilienceScore = clampScore(confidence - identityPenalty - Math.max(0, cpiPeak - 5) * 4);
+  const gameScore = Math.round((growthScore + affordabilityScore + fiscalScore + resilienceScore) / 4);
+
+  return {
+    finalGdpDeltaBillion: round(finalGdpDeltaBillion, 2),
+    peakGdpDeltaBillion: round(peakGdpDeltaBillion, 2),
+    directInvestmentBillion: round(directInvestmentBillion, 2),
+    revenueDeltaBillion: round(revenueDeltaBillion, 2),
+    retailDeltaBillion: round(retailDeltaBillion, 2),
+    confidence,
+    growthScore,
+    affordabilityScore,
+    fiscalScore,
+    resilienceScore,
+    gameScore
+  };
+}
+
+function clampScore(value: number) {
+  return Math.round(Math.max(0, Math.min(100, value)));
+}
+
+function round(value: number, places: number) {
+  const factor = 10 ** places;
+  return Math.round(value * factor) / factor;
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
