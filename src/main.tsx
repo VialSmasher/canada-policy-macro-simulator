@@ -9,11 +9,14 @@ import {
   Factory,
   Gauge,
   Landmark,
+  Minus,
   Pickaxe,
   RefreshCw,
   ShieldCheck,
   Sparkles,
   Store,
+  TrendingDown,
+  TrendingUp,
   type LucideIcon
 } from "lucide-react";
 import { buildBaseline, fallbackBaseline } from "./lib/dataSources";
@@ -22,8 +25,9 @@ import {
   gdpCadEquivalent,
   gdpPerCapitaCadEquivalent,
   jurisdictions,
+  metricRegistry,
   scoreJurisdiction,
-  type JurisdictionProfile
+  type JurisdictionMetric
 } from "./lib/jurisdictions";
 import { runPolicySimulation, runStressAudit } from "./lib/svar";
 import type { MacroBaseline, PolicyScenario, Province, SimulationRow, StressComparison } from "./lib/types";
@@ -232,6 +236,9 @@ function JurisdictionScoreboard() {
   const selected = jurisdictions.find((item) => item.id === selectedId) ?? jurisdictions[0];
   const ranked = [...jurisdictions].sort((a, b) => scoreJurisdiction(b).overall - scoreJurisdiction(a).overall);
   const selectedScore = scoreJurisdiction(selected);
+  const selectedMetrics = metricRegistry(selected);
+  const rank = ranked.findIndex((item) => item.id === selected.id) + 1;
+  const averageScore = Math.round(ranked.reduce((sum, item) => sum + scoreJurisdiction(item).overall, 0) / ranked.length);
 
   return (
     <section className="scoreboard-shell">
@@ -243,29 +250,38 @@ function JurisdictionScoreboard() {
           </div>
           <h2>Compare provinces and states like teams</h2>
           <p>
-            This first pass ranks economic scale, prosperity, growth, safety, and health signals. It deliberately marks weak comparisons
-            instead of pretending every dataset is measured the same way.
+            A sports-style standings table for economies: who is growing, who is safer, who is richer per person, and where the data is
+            strong enough to trust. Weak comparisons are labeled instead of being smuggled into a fake apples-to-apples ranking.
           </p>
         </div>
-        <div className="protocol-card">
-          <strong>Data protocol</strong>
-          <span>Comparable: same-family metric</span>
-          <span>Directional: useful, but different method</span>
-          <span>Limited: placeholder until harmonized</span>
+        <div className="league-summary">
+          <MiniStat label="League size" value={String(jurisdictions.length)} detail="jurisdictions" />
+          <MiniStat label="Avg score" value={String(averageScore)} detail="prototype index" />
+          <MiniStat label="Protocol" value="3" detail="confidence tiers" />
         </div>
       </div>
 
       <div className="scoreboard-grid">
         <section className="ranking-panel">
+          <div className="panel-title">
+            <ShieldCheck size={18} />
+            Standings
+          </div>
           {ranked.map((item, index) => {
             const score = scoreJurisdiction(item);
             return (
-              <button className={`rank-card ${selectedId === item.id ? "active" : ""}`} key={item.id} onClick={() => setSelectedId(item.id)}>
+              <button
+                className={`rank-card ${selectedId === item.id ? "active" : ""}`}
+                style={{ "--team-primary": item.colors.primary, "--team-secondary": item.colors.secondary } as React.CSSProperties}
+                key={item.id}
+                onClick={() => setSelectedId(item.id)}
+              >
                 <span className="rank-number">#{index + 1}</span>
+                <span className="team-badge">{item.abbreviation}</span>
                 <div>
                   <strong>{item.name}</strong>
                   <small>
-                    {item.kind} · {item.country}
+                    {item.nickname} · {item.kind}
                   </small>
                 </div>
                 <b>{score.overall}</b>
@@ -275,83 +291,203 @@ function JurisdictionScoreboard() {
         </section>
 
         <section className="comparison-panel">
-          <div className="comparison-header">
-            <div>
+          <div
+            className="team-header"
+            style={{ "--team-primary": selected.colors.primary, "--team-secondary": selected.colors.secondary, "--team-accent": selected.colors.accent } as React.CSSProperties}
+          >
+            <div className="team-mark">{selected.abbreviation}</div>
+            <div className="team-title">
+              <span>
+                #{rank} · {selected.kind} in {selected.country}
+              </span>
               <h2>{selected.name}</h2>
-              <p>
-                {selected.kind} in {selected.country}
-              </p>
+              <p>{selected.nickname}</p>
             </div>
             <div className="score-pill">{selectedScore.overall}/100</div>
           </div>
 
+          <div className="team-snapshot-grid">
+            <MiniStat label="GDP" value={`${currency(gdpCadEquivalent(selected))}B`} detail="CAD equivalent" />
+            <MiniStat label="GDP / person" value={numberCompact(gdpPerCapitaCadEquivalent(selected))} detail="CAD equivalent" />
+            <MiniStat label="Population" value={`${fmt(selected.populationMillions)}M`} detail="residents" />
+            <MiniStat label="Trend" value={selected.trends[0]?.value ?? "TBD"} detail={selected.trends[0]?.label ?? "momentum"} />
+          </div>
+
           <div className="comparison-metrics">
-            <CompareMetric label="GDP" value={`${currency(gdpCadEquivalent(selected))}B CAD eq.`} detail={`${currency(selected.gdpBillionLocal)}B ${selected.currency}`} quality="comparable" />
-            <CompareMetric label="GDP / person" value={`${numberCompact(gdpPerCapitaCadEquivalent(selected))} CAD eq.`} detail={`${numberCompact(selected.gdpPerCapitaLocal)} ${selected.currency}`} quality="comparable" />
-            <CompareMetric label="Growth" value={selected.realGrowthPct === null ? "Needs live series" : `${fmt(selected.realGrowthPct)}%`} detail={selected.nominalGrowthPct === null ? "real GDP preferred" : `${fmt(selected.nominalGrowthPct)}% nominal`} quality={selected.realGrowthPct === null ? "limited" : "comparable"} />
-            <CompareMetric label="Violent crime" value={metricValue(selected.violentCrime)} detail={selected.violentCrime.source} quality={selected.violentCrime.quality} />
-            <CompareMetric label="Property crime" value={metricValue(selected.propertyCrime)} detail={selected.propertyCrime.source} quality={selected.propertyCrime.quality} />
-            <CompareMetric label="Overdose deaths" value={metricValue(selected.overdoseDeaths)} detail={selected.overdoseDeaths.source} quality={selected.overdoseDeaths.quality} />
+            {selectedMetrics.slice(0, 6).map((metric) => (
+              <CompareMetric
+                key={metric.key}
+                label={metric.label}
+                value={metric.displayValue}
+                detail={`${metric.year} · ${metric.source}`}
+                quality={metric.quality}
+              />
+            ))}
           </div>
 
-          <div className="score-breakdown">
-            <ScoreBar label="Prosperity" value={selectedScore.prosperity} />
-            <ScoreBar label="Growth" value={selectedScore.growth} />
-            <ScoreBar label="Safety" value={selectedScore.safety ?? 0} />
-            <ScoreBar label="Health" value={selectedScore.health ?? 0} />
+          <div className="two-column team-detail-grid">
+            <article className="stats-card">
+              <div className="panel-title">
+                <Gauge size={18} />
+                Ratings
+              </div>
+              <ScoreBar label="Prosperity" value={selectedScore.prosperity} />
+              <ScoreBar label="Growth" value={selectedScore.growth} />
+              <ScoreBar label="Safety" value={selectedScore.safety ?? 0} />
+              <ScoreBar label="Health" value={selectedScore.health ?? 0} />
+            </article>
+
+            <article className="stats-card">
+              <div className="panel-title">
+                <TrendingUp size={18} />
+                Trending
+              </div>
+              <div className="trend-list">
+                {selected.trends.map((trend) => (
+                  <div className={`trend-item ${trend.direction}`} key={trend.label}>
+                    <TrendIcon direction={trend.direction} />
+                    <div>
+                      <strong>{trend.label}</strong>
+                      <span>{trend.value}</span>
+                      <small>{trend.note}</small>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </article>
           </div>
 
-          <div className="model-fit">
-            <strong>What matters here</strong>
-            <div>
-              {selected.modelFit.map((item) => (
-                <span key={item}>{item}</span>
+          <div className="scouting-grid">
+            <ScoutingList title="Strengths" items={selected.scoutingReport.strengths} />
+            <ScoutingList title="Weak spots" items={selected.scoutingReport.weakSpots} />
+            <ScoutingList title="Policy levers" items={selected.scoutingReport.policyLevers} />
+          </div>
+
+          <section className="stat-sheet">
+            <div className="panel-title">
+              <BarChart3 size={18} />
+              Full stat sheet
+            </div>
+            <div className="stat-sheet-grid">
+              {selectedMetrics.map((metric) => (
+                <div className="stat-sheet-row" key={metric.key}>
+                  <span>{metric.category}</span>
+                  <strong>{metric.label}</strong>
+                  <b>{metric.displayValue}</b>
+                  <small className={`quality-dot ${metric.quality}`}>{metric.quality}</small>
+                </div>
               ))}
             </div>
-          </div>
+          </section>
         </section>
       </div>
 
-      <section className="comparison-table-panel">
-        <div className="panel-title">
-          <ShieldCheck size={18} />
-          Cross-border table
-        </div>
-        <div className="table-scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>Place</th>
-                <th>Score</th>
-                <th>GDP CAD eq.</th>
-                <th>GDP/person CAD eq.</th>
-                <th>Growth</th>
-                <th>Violent crime</th>
-                <th>Property crime</th>
-                <th>Overdose deaths</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ranked.map((item) => {
-                const score = scoreJurisdiction(item);
-                return (
-                  <tr key={item.id}>
-                    <td>{item.name}</td>
-                    <td>{score.overall}</td>
-                    <td>{currency(gdpCadEquivalent(item))}B</td>
-                    <td>{numberCompact(gdpPerCapitaCadEquivalent(item))}</td>
-                    <td>{item.realGrowthPct === null ? "TBD" : `${fmt(item.realGrowthPct)}%`}</td>
-                    <td>{metricValue(item.violentCrime)}</td>
-                    <td>{metricValue(item.propertyCrime)}</td>
-                    <td>{metricValue(item.overdoseDeaths)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <div className="league-lower-grid">
+        <section className="comparison-table-panel">
+          <div className="panel-title">
+            <ShieldCheck size={18} />
+            Cross-border table
+          </div>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Place</th>
+                  <th>Score</th>
+                  <th>GDP CAD eq.</th>
+                  <th>GDP/person CAD eq.</th>
+                  <th>Growth</th>
+                  <th>Violent crime</th>
+                  <th>Property crime</th>
+                  <th>Overdose deaths</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ranked.map((item) => {
+                  const score = scoreJurisdiction(item);
+                  return (
+                    <tr key={item.id}>
+                      <td>
+                        <span className="table-team" style={{ "--team-primary": item.colors.primary } as React.CSSProperties}>
+                          {item.abbreviation}
+                        </span>
+                        {item.name}
+                      </td>
+                      <td>{score.overall}</td>
+                      <td>{currency(gdpCadEquivalent(item))}B</td>
+                      <td>{numberCompact(gdpPerCapitaCadEquivalent(item))}</td>
+                      <td>{item.realGrowthPct === null ? "TBD" : `${fmt(item.realGrowthPct)}%`}</td>
+                      <td>{metricValue(item.violentCrime)}</td>
+                      <td>{metricValue(item.propertyCrime)}</td>
+                      <td>{metricValue(item.overdoseDeaths)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="method-panel">
+          <div className="panel-title">
+            <AlertTriangle size={18} />
+            Accuracy protocol
+          </div>
+          <div className="protocol-list">
+            <ProtocolItem label="Comparable" text="Same-family statistic, same unit, or a defensible normalized conversion." />
+            <ProtocolItem label="Directional" text="Useful signal, but method differs across borders. Good for context, not a clean ranking." />
+            <ProtocolItem label="Limited" text="Placeholder, stale series, or pending harmonization. Penalized in the composite score." />
+          </div>
+          <div className="source-ledger">
+            <strong>Selected sources</strong>
+            {selectedMetrics.slice(0, 8).map((metric) => (
+              <div key={metric.key}>
+                <span>{metric.label}</span>
+                <small>{metric.source}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
     </section>
+  );
+}
+
+function MiniStat({ label, value, detail }: { label: string; value: string; detail: string }) {
+  return (
+    <div className="mini-stat">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{detail}</small>
+    </div>
+  );
+}
+
+function TrendIcon({ direction }: { direction: "up" | "flat" | "down" | "unknown" }) {
+  if (direction === "up") return <TrendingUp size={18} />;
+  if (direction === "down") return <TrendingDown size={18} />;
+  return <Minus size={18} />;
+}
+
+function ScoutingList({ title, items }: { title: string; items: string[] }) {
+  return (
+    <article className="scouting-card">
+      <strong>{title}</strong>
+      <ul>
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </article>
+  );
+}
+
+function ProtocolItem({ label, text }: { label: string; text: string }) {
+  return (
+    <div className="protocol-item">
+      <strong>{label}</strong>
+      <span>{text}</span>
+    </div>
   );
 }
 
@@ -755,7 +891,7 @@ function numberCompact(value: number) {
   return new Intl.NumberFormat("en-CA", { maximumFractionDigits: 0 }).format(Math.round(value));
 }
 
-function metricValue(metric: JurisdictionProfile["violentCrime"]) {
+function metricValue(metric: JurisdictionMetric) {
   if (metric.value === null) return "TBD";
   return `${fmt(metric.value)} ${metric.unit}`;
 }
