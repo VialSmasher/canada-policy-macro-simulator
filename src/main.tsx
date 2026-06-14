@@ -38,6 +38,14 @@ import {
   type JurisdictionMetric,
   type JurisdictionProfile
 } from "./lib/jurisdictions";
+import {
+  buildLeagueStandings,
+  leagueDivisions,
+  registeredJurisdictionCount,
+  type FormSignal,
+  type LeagueDivisionId,
+  type LeagueStanding
+} from "./lib/league";
 import { runPolicySimulation, runStressAudit } from "./lib/svar";
 import type { MacroBaseline, PolicyScenario, Province, SimulationRow, StressComparison } from "./lib/types";
 import "./styles.css";
@@ -56,6 +64,7 @@ const defaultScenario: PolicyScenario = {
 
 function App() {
   const [activeView, setActiveView] = useState<"scoreboard" | "matchup" | "simulator">("scoreboard");
+  const [matchupPair, setMatchupPair] = useState({ leftId: "alberta", rightId: "texas" });
   const [baseline, setBaseline] = useState<MacroBaseline>(fallbackBaseline(["Live baseline has not loaded yet."]));
   const [scenario, setScenario] = useState<PolicyScenario>(defaultScenario);
   const [selectedScenarioId, setSelectedScenarioId] = useState("ab-pipeline");
@@ -116,6 +125,11 @@ function App() {
     setScenario(item.scenario);
   }
 
+  function openMatchup(leftId: string, rightId: string) {
+    setMatchupPair({ leftId, rightId });
+    setActiveView("matchup");
+  }
+
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -151,9 +165,15 @@ function App() {
       </div>
 
       {activeView === "scoreboard" ? (
-        <JurisdictionScoreboard />
+        <JurisdictionScoreboard onCompare={openMatchup} />
       ) : activeView === "matchup" ? (
-        <MatchupMode />
+        <MatchupMode
+          leftId={matchupPair.leftId}
+          rightId={matchupPair.rightId}
+          onLeftChange={(leftId) => setMatchupPair((current) => ({ ...current, leftId }))}
+          onRightChange={(rightId) => setMatchupPair((current) => ({ ...current, rightId }))}
+          onPairChange={(leftId, rightId) => setMatchupPair({ leftId, rightId })}
+        />
       ) : (
         <>
           <section className="story-band">
@@ -245,66 +265,164 @@ type ImpactEstimate = {
   gameScore: number;
 };
 
-function JurisdictionScoreboard() {
+function JurisdictionScoreboard({ onCompare }: { onCompare: (leftId: string, rightId: string) => void }) {
   const [selectedId, setSelectedId] = useState("alberta");
-  const selected = jurisdictions.find((item) => item.id === selectedId) ?? jurisdictions[0];
-  const ranked = [...jurisdictions].sort((a, b) => scoreJurisdiction(b).overall - scoreJurisdiction(a).overall);
-  const selectedScore = scoreJurisdiction(selected);
+  const [divisionId, setDivisionId] = useState<LeagueDivisionId>("overall");
+  const standings = useMemo(() => buildLeagueStandings(divisionId), [divisionId]);
+  const selectedStanding = standings.find((item) => item.profile.id === selectedId) ?? standings[0] ?? buildLeagueStandings("overall")[0];
+  const selected = selectedStanding.profile;
+  const selectedScore = selectedStanding.score;
   const selectedMetrics = metricRegistry(selected);
-  const rank = ranked.findIndex((item) => item.id === selected.id) + 1;
-  const averageScore = Math.round(ranked.reduce((sum, item) => sum + scoreJurisdiction(item).overall, 0) / ranked.length);
+  const leader = standings[0] ?? selectedStanding;
+  const closestRival = standings.find((item) => item.profile.id === selectedStanding.closestRivalId) ?? leader;
+  const averageScore = Math.round(standings.reduce((sum, item) => sum + item.score.overall, 0) / Math.max(standings.length, 1));
+  const biggestMover = standings
+    .filter((item) => item.movement !== null)
+    .sort((a, b) => Math.abs(b.movement ?? 0) - Math.abs(a.movement ?? 0))[0];
 
   return (
     <section className="scoreboard-shell">
-      <div className="scoreboard-hero">
+      <div className="league-hero">
         <div>
           <div className="panel-title">
             <BarChart3 size={18} />
-            Jurisdiction scoreboard
+            League table
           </div>
-          <h2>Compare provinces and states like teams</h2>
+          <h2>Rank, movement, rivalries, and the path to climb</h2>
           <p>
-            A sports-style standings table for economies: who is growing, who is safer, who is richer per person, and where the data is
-            strong enough to trust. Weak comparisons are labeled instead of being smuggled into a fake apples-to-apples ranking.
+            Sports standings are compelling because they show pressure: who is rising, who is falling, who is chasing the leader, and what
+            weakness is holding each team back. This table uses that grammar for jurisdictions.
           </p>
         </div>
         <div className="league-summary">
-          <MiniStat label="League size" value={String(jurisdictions.length)} detail="jurisdictions" />
+          <MiniStat label="Roster" value={String(registeredJurisdictionCount)} detail="registered places" />
           <MiniStat label="Avg score" value={String(averageScore)} detail="prototype index" />
-          <MiniStat label="Protocol" value="3" detail="confidence tiers" />
+          <MiniStat label="Biggest move" value={movementText(biggestMover?.movement ?? null)} detail={biggestMover?.entry.name ?? "seeded form"} />
         </div>
       </div>
 
-      <div className="scoreboard-grid">
-        <section className="ranking-panel">
+      <section className="division-strip">
+        {leagueDivisions.map((division) => (
+          <button
+            className={divisionId === division.id ? "active" : ""}
+            key={division.id}
+            title={division.description}
+            onClick={() => {
+              setDivisionId(division.id);
+              const next = buildLeagueStandings(division.id)[0];
+              if (next) setSelectedId(next.profile.id);
+            }}
+          >
+            {division.label}
+          </button>
+        ))}
+      </section>
+
+      <div className="league-layout">
+        <section className="league-table-panel">
           <div className="panel-title">
-            <ShieldCheck size={18} />
-            Standings
+            <Trophy size={18} />
+            {leagueDivisions.find((item) => item.id === divisionId)?.label ?? "Overall"} standings
           </div>
-          {ranked.map((item, index) => {
-            const score = scoreJurisdiction(item);
-            return (
-              <button
-                className={`rank-card ${selectedId === item.id ? "active" : ""}`}
-                style={{ "--team-primary": item.colors.primary, "--team-secondary": item.colors.secondary } as React.CSSProperties}
-                key={item.id}
-                onClick={() => setSelectedId(item.id)}
-              >
-                <span className="rank-number">#{index + 1}</span>
-                <span className="team-badge">{item.abbreviation}</span>
-                <div>
-                  <strong>{item.name}</strong>
-                  <small>
-                    {item.nickname} · {item.kind}
-                  </small>
-                </div>
-                <b>{score.overall}</b>
-              </button>
-            );
-          })}
+          <div className="league-table-scroll">
+            <table className="league-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Place</th>
+                  <th>Score</th>
+                  <th>Move</th>
+                  <th>Gap</th>
+                  <th>Form</th>
+                  <th>Strength</th>
+                  <th>Weakness</th>
+                  <th>Data</th>
+                </tr>
+              </thead>
+              <tbody>
+                {standings.map((standing) => (
+                  <tr
+                    className={selectedId === standing.profile.id ? "active" : ""}
+                    key={standing.profile.id}
+                    style={{ "--team-primary": standing.profile.colors.primary } as React.CSSProperties}
+                    onClick={() => setSelectedId(standing.profile.id)}
+                  >
+                    <td>#{standing.currentRank}</td>
+                    <td>
+                      <span className="table-team" style={{ "--team-primary": standing.profile.colors.primary } as React.CSSProperties}>
+                        {standing.profile.abbreviation}
+                      </span>
+                      <strong>{standing.profile.name}</strong>
+                      <small>{standing.profile.nickname}</small>
+                    </td>
+                    <td>
+                      <b>{standing.score.overall}</b>
+                    </td>
+                    <td>
+                      <MovementBadge movement={standing.movement} />
+                    </td>
+                    <td>{standing.gapToLeader === 0 ? "-" : `-${standing.gapToLeader}`}</td>
+                    <td>
+                      <FormDots form={standing.form} />
+                    </td>
+                    <td>{standing.topStrength}</td>
+                    <td>{standing.biggestWeakness}</td>
+                    <td>
+                      <DataBadge confidence={standing.dataConfidence} completeness={standing.entry.dataCompleteness} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
 
-        <section className="comparison-panel">
+        <section className="league-side-panel">
+          <div className="panel-title">
+            <Sparkles size={18} />
+            Path to climb
+          </div>
+          <h2>{selected.name}</h2>
+          <p>
+            {selectedStanding.gapToLeader === 0
+              ? `${selected.name} leads this division. The job is defending the lead with better source coverage.`
+              : `${selected.name} trails ${leader.profile.name} by ${selectedStanding.gapToLeader} points in this division.`}
+          </p>
+          <div className="climb-list">
+            <div>
+              <span>Top strength</span>
+              <strong>{selectedStanding.topStrength}</strong>
+            </div>
+            <div>
+              <span>Biggest drag</span>
+              <strong>{selectedStanding.biggestWeakness}</strong>
+            </div>
+            <div>
+              <span>Closest rival</span>
+              <strong>{closestRival.profile.name}</strong>
+            </div>
+          </div>
+          <div className="compare-actions">
+            <button className="primary-button" onClick={() => onCompare(selected.id, leader.profile.id)} disabled={selected.id === leader.profile.id}>
+              <ArrowRightLeft size={16} />
+              Compare with leader
+            </button>
+            <button className="ghost-button" onClick={() => onCompare(selected.id, closestRival.profile.id)} disabled={selected.id === closestRival.profile.id}>
+              <ArrowRightLeft size={16} />
+              Compare with rival
+            </button>
+          </div>
+          <div className="league-note">
+            Movement and form are seeded prototype signals until historical data adapters are connected.
+          </div>
+        </section>
+      </div>
+
+      <section className="comparison-panel selected-team-panel">
+          <div className="panel-title">
+            <ShieldCheck size={18} />
+            Selected team page
+          </div>
           <div
             className="team-header"
             style={{ "--team-primary": selected.colors.primary, "--team-secondary": selected.colors.secondary, "--team-accent": selected.colors.accent } as React.CSSProperties}
@@ -312,7 +430,7 @@ function JurisdictionScoreboard() {
             <div className="team-mark">{selected.abbreviation}</div>
             <div className="team-title">
               <span>
-                #{rank} · {selected.kind} in {selected.country}
+                #{selectedStanding.currentRank} · {selected.kind} in {selected.country}
               </span>
               <h2>{selected.name}</h2>
               <p>{selected.nickname}</p>
@@ -324,7 +442,7 @@ function JurisdictionScoreboard() {
             <MiniStat label="GDP" value={`${currency(gdpCadEquivalent(selected))}B`} detail="CAD equivalent" />
             <MiniStat label="GDP / person" value={numberCompact(gdpPerCapitaCadEquivalent(selected))} detail="CAD equivalent" />
             <MiniStat label="Population" value={`${fmt(selected.populationMillions)}M`} detail="residents" />
-            <MiniStat label="Trend" value={selected.trends[0]?.value ?? "TBD"} detail={selected.trends[0]?.label ?? "momentum"} />
+            <MiniStat label="Gap" value={selectedStanding.gapToLeader === 0 ? "Leader" : `-${selectedStanding.gapToLeader}`} detail="to division leader" />
           </div>
 
           <div className="comparison-metrics">
@@ -393,55 +511,6 @@ function JurisdictionScoreboard() {
               ))}
             </div>
           </section>
-        </section>
-      </div>
-
-      <div className="league-lower-grid">
-        <section className="comparison-table-panel">
-          <div className="panel-title">
-            <ShieldCheck size={18} />
-            Cross-border table
-          </div>
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Place</th>
-                  <th>Score</th>
-                  <th>GDP CAD eq.</th>
-                  <th>GDP/person CAD eq.</th>
-                  <th>Growth</th>
-                  <th>Violent crime</th>
-                  <th>Property crime</th>
-                  <th>Overdose deaths</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ranked.map((item) => {
-                  const score = scoreJurisdiction(item);
-                  return (
-                    <tr key={item.id}>
-                      <td>
-                        <span className="table-team" style={{ "--team-primary": item.colors.primary } as React.CSSProperties}>
-                          {item.abbreviation}
-                        </span>
-                        {item.name}
-                      </td>
-                      <td>{score.overall}</td>
-                      <td>{currency(gdpCadEquivalent(item))}B</td>
-                      <td>{numberCompact(gdpPerCapitaCadEquivalent(item))}</td>
-                      <td>{item.realGrowthPct === null ? "TBD" : `${fmt(item.realGrowthPct)}%`}</td>
-                      <td>{metricValue(item.violentCrime)}</td>
-                      <td>{metricValue(item.propertyCrime)}</td>
-                      <td>{metricValue(item.overdoseDeaths)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
         <section className="method-panel">
           <div className="panel-title">
             <AlertTriangle size={18} />
@@ -462,8 +531,38 @@ function JurisdictionScoreboard() {
             ))}
           </div>
         </section>
-      </div>
+      </section>
     </section>
+  );
+}
+
+function MovementBadge({ movement }: { movement: number | null }) {
+  const label = movementText(movement);
+  const direction = movement === null || movement === 0 ? "flat" : movement > 0 ? "up" : "down";
+  return <span className={`movement-badge ${direction}`}>{label}</span>;
+}
+
+function movementText(movement: number | null) {
+  if (movement === null) return "NEW";
+  if (movement === 0) return "-";
+  return movement > 0 ? `+${movement}` : String(movement);
+}
+
+function FormDots({ form }: { form: FormSignal[] }) {
+  return (
+    <span className="form-dots" aria-label={`Form ${form.join(", ")}`}>
+      {form.map((signal, index) => (
+        <i className={signal} key={`${signal}-${index}`} />
+      ))}
+    </span>
+  );
+}
+
+function DataBadge({ confidence, completeness }: { confidence: LeagueStanding["dataConfidence"]; completeness: number }) {
+  return (
+    <span className={`data-badge ${confidence}`}>
+      {confidence} · {Math.round(completeness * 100)}%
+    </span>
   );
 }
 
@@ -495,9 +594,19 @@ const featuredMatchups = [
   ["florida", "british-columbia", "Migration and housing"]
 ] as const;
 
-function MatchupMode() {
-  const [leftId, setLeftId] = useState("alberta");
-  const [rightId, setRightId] = useState("texas");
+function MatchupMode({
+  leftId,
+  rightId,
+  onLeftChange,
+  onRightChange,
+  onPairChange
+}: {
+  leftId: string;
+  rightId: string;
+  onLeftChange: (id: string) => void;
+  onRightChange: (id: string) => void;
+  onPairChange: (leftId: string, rightId: string) => void;
+}) {
   const left = buildCompetitor(leftId);
   const right = buildCompetitor(rightId);
   const rows = buildMatchupRows(left, right);
@@ -529,18 +638,17 @@ function MatchupMode() {
       </div>
 
       <section className="matchup-toolbar">
-        <JurisdictionPicker title="Your jurisdiction" selectedId={left.entry.id} onSelect={setLeftId} />
+        <JurisdictionPicker title="Your jurisdiction" selectedId={left.entry.id} onSelect={onLeftChange} />
         <button
           className="swap-button"
           onClick={() => {
-            setLeftId(right.entry.id);
-            setRightId(left.entry.id);
+            onPairChange(right.entry.id, left.entry.id);
           }}
           aria-label="Swap jurisdictions"
         >
           <ArrowRightLeft size={19} />
         </button>
-        <JurisdictionPicker title="Opponent" selectedId={right.entry.id} onSelect={setRightId} />
+        <JurisdictionPicker title="Opponent" selectedId={right.entry.id} onSelect={onRightChange} />
       </section>
 
       <section className="quick-matchups">
@@ -555,8 +663,7 @@ function MatchupMode() {
                 className="quick-chip"
                 key={`${home}-${away}`}
                 onClick={() => {
-                  setLeftId(home);
-                  setRightId(away);
+                  onPairChange(home, away);
                 }}
               >
                 {label}
@@ -571,7 +678,7 @@ function MatchupMode() {
           </div>
           <div className="quick-chip-row">
             {suggested.map((entry) => (
-              <button className="quick-chip" key={entry.id} onClick={() => setRightId(entry.id)}>
+              <button className="quick-chip" key={entry.id} onClick={() => onRightChange(entry.id)}>
                 {entry.name}
               </button>
             ))}

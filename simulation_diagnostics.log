@@ -1,7 +1,7 @@
-2026-06-14T19:16:54.363Z stress audit completed
+2026-06-14T23:45:00.441Z stress audit completed
 baseline source quality: mixed
 policy rate fetched from Bank of Canada Valet series V39079.
-real GDP fetched from StatCan vector 2063744.
 employment fetched from StatCan vector 2062811.
+real GDP fetched from StatCan vector 2063744.
 headline CPI fetched from StatCan vector 41690973.
 capex fell back after all StatCan vector candidates failed.
