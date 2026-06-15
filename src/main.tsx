@@ -46,6 +46,7 @@ import {
   type LeagueDivisionId,
   type LeagueStanding
 } from "./lib/league";
+import { policyLabPolicies, type EvidenceGrade, type OutcomeDirection, type PolicyStatus } from "./lib/policyLab";
 import { runPolicySimulation, runStressAudit } from "./lib/svar";
 import type { MacroBaseline, PolicyScenario, Province, SimulationRow, StressComparison } from "./lib/types";
 import "./styles.css";
@@ -63,7 +64,7 @@ const defaultScenario: PolicyScenario = {
 };
 
 function App() {
-  const [activeView, setActiveView] = useState<"scoreboard" | "matchup" | "simulator">("scoreboard");
+  const [activeView, setActiveView] = useState<"scoreboard" | "matchup" | "policy" | "simulator">("scoreboard");
   const [matchupPair, setMatchupPair] = useState({ leftId: "alberta", rightId: "texas" });
   const [baseline, setBaseline] = useState<MacroBaseline>(fallbackBaseline(["Live baseline has not loaded yet."]));
   const [scenario, setScenario] = useState<PolicyScenario>(defaultScenario);
@@ -164,6 +165,9 @@ function App() {
         <button className={activeView === "matchup" ? "active" : ""} onClick={() => setActiveView("matchup")}>
           Matchup
         </button>
+        <button className={activeView === "policy" ? "active" : ""} onClick={() => setActiveView("policy")}>
+          Policy Lab
+        </button>
         <button className={activeView === "simulator" ? "active" : ""} onClick={() => setActiveView("simulator")}>
           Simulator
         </button>
@@ -179,6 +183,8 @@ function App() {
           onRightChange={(rightId) => setMatchupPair((current) => ({ ...current, rightId }))}
           onPairChange={(leftId, rightId) => setMatchupPair({ leftId, rightId })}
         />
+      ) : activeView === "policy" ? (
+        <PolicyLab />
       ) : (
         <>
           <section className="story-band">
@@ -269,6 +275,215 @@ type ImpactEstimate = {
   resilienceScore: number;
   gameScore: number;
 };
+
+function PolicyLab() {
+  const [selectedPolicyId, setSelectedPolicyId] = useState(policyLabPolicies[0]?.id ?? "");
+  const selectedPolicy = policyLabPolicies.find((policy) => policy.id === selectedPolicyId) ?? policyLabPolicies[0];
+  const scaledCount = selectedPolicy.jurisdictions.filter((item) => item.status === "scaled" || item.status === "benchmark").length;
+  const restrictedCount = selectedPolicy.jurisdictions.filter((item) => item.status === "restricted").length;
+  const strongerSignals = selectedPolicy.outcomes.filter((item) => item.grade === "moderate" || item.grade === "strong").length;
+
+  return (
+    <section className="policy-shell">
+      <div className="policy-hero">
+        <div>
+          <div className="panel-title">
+            <ShieldCheck size={18} />
+            Policy lab
+          </div>
+          <h2>Track policy bets against real outcomes</h2>
+          <p>
+            A policy can be popular, controversial, expensive, or impressive on paper. The useful question is whether adopters outperform
+            similar non-adopters after launch, and how strong that evidence is.
+          </p>
+        </div>
+        <div className="league-summary">
+          <MiniStat label="Policy" value={selectedPolicy.title} detail={selectedPolicy.category} />
+          <MiniStat label="Tracked places" value={String(selectedPolicy.jurisdictions.length)} detail={`${scaledCount} adopter or benchmark`} />
+          <MiniStat label="Evidence" value={`${strongerSignals}/${selectedPolicy.outcomes.length}`} detail="moderate+ signals" />
+        </div>
+      </div>
+
+      <div className="policy-layout">
+        <aside className="policy-list-panel">
+          <div className="panel-title">
+            <Trophy size={18} />
+            Policy families
+          </div>
+          {policyLabPolicies.map((policy) => (
+            <button
+              className={selectedPolicy.id === policy.id ? "active" : ""}
+              key={policy.id}
+              onClick={() => setSelectedPolicyId(policy.id)}
+            >
+              <strong>{policy.title}</strong>
+              <span>{policy.category}</span>
+            </button>
+          ))}
+          <div className="policy-note">
+            Next candidates: zoning reform, safe streets, tax incentives, opioid response, and permitting reform.
+          </div>
+        </aside>
+
+        <section className="policy-detail-panel">
+          <div className="policy-detail-header">
+            <div>
+              <div className="panel-title">
+                <Activity size={18} />
+                Evidence file
+              </div>
+              <h2>{selectedPolicy.title}</h2>
+              <p>{selectedPolicy.summary}</p>
+            </div>
+            <div className="policy-decision-card">
+              <span>Decision use</span>
+              <strong>{selectedPolicy.primaryMetric}</strong>
+              <small>{selectedPolicy.decisionUse}</small>
+            </div>
+          </div>
+
+          <div className="policy-question-band">
+            <div>
+              <span>Testable claim</span>
+              <strong>{selectedPolicy.testableClaim}</strong>
+            </div>
+            <div>
+              <span>Comparison question</span>
+              <strong>{selectedPolicy.policyQuestion}</strong>
+            </div>
+            <div>
+              <span>Restricted peers</span>
+              <strong>{restrictedCount}</strong>
+            </div>
+          </div>
+
+          <div className="policy-grid">
+            {selectedPolicy.jurisdictions.map((item) => (
+              <article className={`policy-jurisdiction-card ${item.status}`} key={item.id}>
+                <div className="policy-card-header">
+                  <div>
+                    <PolicyStatusBadge status={item.status} />
+                    <h3>{item.name}</h3>
+                    <span>{item.region}</span>
+                  </div>
+                  <b>{item.adoption}</b>
+                </div>
+                <p>{item.posture}</p>
+                <div className="policy-safeguards">
+                  {item.safeguards.slice(0, 3).map((safeguard) => (
+                    <span key={safeguard}>{safeguard}</span>
+                  ))}
+                </div>
+                <div className="policy-signal-list">
+                  {item.signals.map((signal) => (
+                    <div key={`${item.id}-${signal.metric}`}>
+                      <strong>{signal.metric}</strong>
+                      <span>{signal.adopterSignal}</span>
+                      <div>
+                        <DirectionPill direction={signal.direction} />
+                        <GradePill grade={signal.grade} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <section className="policy-outcome-panel">
+            <div className="panel-title">
+              <BarChart3 size={18} />
+              Outcome board
+            </div>
+            <div className="policy-outcome-table">
+              {selectedPolicy.outcomes.map((outcome) => (
+                <div className="policy-outcome-row" key={outcome.metric}>
+                  <div>
+                    <span>Metric</span>
+                    <strong>{outcome.metric}</strong>
+                  </div>
+                  <div>
+                    <span>Adopter signal</span>
+                    <strong>{outcome.adopterSignal}</strong>
+                  </div>
+                  <div>
+                    <span>Peer test</span>
+                    <strong>{outcome.peerQuestion}</strong>
+                  </div>
+                  <div className="policy-outcome-tags">
+                    <DirectionPill direction={outcome.direction} />
+                    <GradePill grade={outcome.grade} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </section>
+      </div>
+
+      <div className="policy-bottom-grid">
+        <section className="policy-method-panel">
+          <div className="panel-title">
+            <Sparkles size={18} />
+            What would make this decision-grade?
+          </div>
+          <div className="policy-method-list">
+            {selectedPolicy.evidenceSteps.map((step, index) => (
+              <div key={step}>
+                <span>{index + 1}</span>
+                <strong>{step}</strong>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="policy-method-panel">
+          <div className="panel-title">
+            <AlertTriangle size={18} />
+            Source ledger
+          </div>
+          <div className="policy-source-list">
+            {selectedPolicy.sources.map((source) => (
+              <a href={source.url} key={source.url} rel="noreferrer" target="_blank">
+                {source.label}
+              </a>
+            ))}
+          </div>
+          <p className="policy-note">
+            The current labels are intentionally cautious. Program claims should become sortable evidence only after audited dispatch,
+            complaint, cost, and incident datasets are connected.
+          </p>
+        </section>
+      </div>
+    </section>
+  );
+}
+
+function PolicyStatusBadge({ status }: { status: PolicyStatus }) {
+  return <span className={`policy-status ${status}`}>{statusLabel(status)}</span>;
+}
+
+function DirectionPill({ direction }: { direction: OutcomeDirection }) {
+  return <span className={`policy-pill direction ${direction}`}>{directionLabel(direction)}</span>;
+}
+
+function GradePill({ grade }: { grade: EvidenceGrade }) {
+  return <span className={`policy-pill grade ${grade}`}>{grade} evidence</span>;
+}
+
+function statusLabel(status: PolicyStatus) {
+  if (status === "scaled") return "scaled adopter";
+  if (status === "pilot") return "pilot";
+  if (status === "restricted") return "restricted";
+  return "benchmark";
+}
+
+function directionLabel(direction: OutcomeDirection) {
+  if (direction === "better") return "positive";
+  if (direction === "worse") return "negative";
+  if (direction === "risk") return "risk";
+  return direction;
+}
 
 function JurisdictionScoreboard({ onCompare }: { onCompare: (leftId: string, rightId: string) => void }) {
   const [selectedId, setSelectedId] = useState("alberta");

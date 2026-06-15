@@ -162,6 +162,11 @@ h2 {
 .division-strip,
 .league-table-panel,
 .league-side-panel,
+.policy-hero,
+.policy-list-panel,
+.policy-detail-panel,
+.policy-method-panel,
+.policy-outcome-panel,
 .matchup-hero,
 .matchup-toolbar,
 .quick-matchups,
@@ -199,6 +204,14 @@ h2 {
   min-width: 0;
 }
 
+.policy-shell {
+  max-width: 1500px;
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
 .scoreboard-hero {
   padding: 18px;
   display: grid;
@@ -215,12 +228,32 @@ h2 {
   align-items: center;
 }
 
+.policy-hero {
+  padding: 18px;
+  display: grid;
+  grid-template-columns: 1fr minmax(330px, 430px);
+  gap: 18px;
+  align-items: center;
+}
+
 .league-hero h2 {
   margin-top: 8px;
   font-size: clamp(1.55rem, 3vw, 2.25rem);
 }
 
+.policy-hero h2 {
+  margin-top: 8px;
+  font-size: clamp(1.55rem, 3vw, 2.25rem);
+}
+
 .league-hero p {
+  max-width: 860px;
+  color: #4e5a5d;
+  line-height: 1.5;
+  margin: 10px 0 0;
+}
+
+.policy-hero p {
   max-width: 860px;
   color: #4e5a5d;
   line-height: 1.5;
@@ -449,6 +482,356 @@ h2 {
 
 .selected-team-panel {
   padding: 16px;
+}
+
+.policy-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 16px;
+  min-width: 0;
+}
+
+.policy-list-panel,
+.policy-detail-panel,
+.policy-method-panel,
+.policy-outcome-panel {
+  padding: 16px;
+  min-width: 0;
+}
+
+.policy-list-panel {
+  display: grid;
+  gap: 9px;
+  align-content: start;
+}
+
+.policy-list-panel button {
+  min-height: 76px;
+  border: 1px solid #d8d0c4;
+  border-radius: 8px;
+  background: #faf7f0;
+  padding: 11px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.policy-list-panel button.active,
+.policy-list-panel button:hover {
+  border-color: #12695f;
+  box-shadow: inset 0 0 0 1px #12695f;
+}
+
+.policy-list-panel strong,
+.policy-list-panel span {
+  display: block;
+}
+
+.policy-list-panel span {
+  margin-top: 4px;
+  color: #667174;
+  font-size: 0.84rem;
+}
+
+.policy-note {
+  color: #667174;
+  font-size: 0.86rem;
+  line-height: 1.35;
+  margin: 10px 0 0;
+}
+
+.policy-detail-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 330px);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.policy-detail-header h2 {
+  margin-top: 10px;
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  line-height: 1.05;
+}
+
+.policy-detail-header p {
+  color: #4e5a5d;
+  line-height: 1.5;
+  margin: 10px 0 0;
+}
+
+.policy-decision-card {
+  border: 1px solid #e5ded2;
+  border-radius: 8px;
+  background: #faf7f0;
+  padding: 14px;
+  display: grid;
+  align-content: space-between;
+  gap: 8px;
+}
+
+.policy-decision-card span,
+.policy-question-band span,
+.policy-outcome-row span {
+  color: #536063;
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.policy-decision-card strong {
+  font-size: 1.25rem;
+  line-height: 1.1;
+}
+
+.policy-decision-card small {
+  color: #4e5a5d;
+  line-height: 1.35;
+}
+
+.policy-question-band {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.3fr) minmax(120px, 0.35fr);
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.policy-question-band > div {
+  border: 1px solid #e5ded2;
+  border-radius: 8px;
+  background: #faf7f0;
+  padding: 12px;
+}
+
+.policy-question-band strong {
+  display: block;
+  margin-top: 6px;
+  line-height: 1.25;
+}
+
+.policy-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.policy-jurisdiction-card {
+  border: 1px solid #e1d9cd;
+  border-top: 5px solid #12695f;
+  border-radius: 8px;
+  background: #faf7f0;
+  padding: 13px;
+  min-width: 0;
+}
+
+.policy-jurisdiction-card.scaled {
+  border-top-color: #12695f;
+}
+
+.policy-jurisdiction-card.pilot {
+  border-top-color: #80562a;
+}
+
+.policy-jurisdiction-card.restricted {
+  border-top-color: #aa3f21;
+}
+
+.policy-jurisdiction-card.benchmark {
+  border-top-color: #3d5a99;
+}
+
+.policy-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: start;
+}
+
+.policy-card-header h3 {
+  margin: 8px 0 2px;
+  font-size: 1.25rem;
+  line-height: 1.05;
+}
+
+.policy-card-header span,
+.policy-card-header b {
+  color: #667174;
+  font-size: 0.83rem;
+}
+
+.policy-jurisdiction-card p {
+  color: #4e5a5d;
+  line-height: 1.4;
+  margin: 12px 0;
+}
+
+.policy-status,
+.policy-pill {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.policy-status.scaled,
+.policy-pill.better,
+.policy-pill.strong {
+  background: #e0efe6;
+  color: #12695f;
+}
+
+.policy-status.pilot,
+.policy-status.benchmark,
+.policy-pill.mixed,
+.policy-pill.moderate,
+.policy-pill.unknown {
+  background: #f4ead9;
+  color: #80562a;
+}
+
+.policy-status.restricted,
+.policy-pill.risk,
+.policy-pill.worse,
+.policy-pill.weak {
+  background: #f8e4dc;
+  color: #aa3f21;
+}
+
+.policy-safeguards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.policy-safeguards span {
+  border-radius: 999px;
+  background: white;
+  color: #536063;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 7px;
+}
+
+.policy-signal-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.policy-signal-list > div {
+  border: 1px solid #e5ded2;
+  border-radius: 8px;
+  background: white;
+  padding: 10px;
+}
+
+.policy-signal-list strong,
+.policy-signal-list span {
+  display: block;
+}
+
+.policy-signal-list span {
+  color: #4e5a5d;
+  font-size: 0.86rem;
+  line-height: 1.35;
+  margin-top: 4px;
+}
+
+.policy-signal-list div div,
+.policy-outcome-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.policy-outcome-panel {
+  margin-top: 16px;
+}
+
+.policy-outcome-table {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.policy-outcome-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.7fr) minmax(220px, 1fr) minmax(220px, 1fr) minmax(140px, 0.45fr);
+  gap: 10px;
+  align-items: stretch;
+}
+
+.policy-outcome-row > div {
+  border: 1px solid #e5ded2;
+  border-radius: 8px;
+  background: #faf7f0;
+  padding: 10px;
+  min-width: 0;
+}
+
+.policy-outcome-row strong {
+  display: block;
+  margin-top: 5px;
+  color: #1f2528;
+  line-height: 1.3;
+}
+
+.policy-bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  gap: 16px;
+}
+
+.policy-method-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.policy-method-list div {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 10px;
+  align-items: start;
+  border: 1px solid #e5ded2;
+  border-radius: 8px;
+  background: #faf7f0;
+  padding: 10px;
+}
+
+.policy-method-list span {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #12695f;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+}
+
+.policy-method-list strong {
+  line-height: 1.35;
+}
+
+.policy-source-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.policy-source-list a {
+  border: 1px solid #e5ded2;
+  border-radius: 8px;
+  background: #faf7f0;
+  color: #12695f;
+  padding: 10px;
+  text-decoration: none;
+  font-weight: 850;
 }
 
 .matchup-hero {
@@ -1922,6 +2305,11 @@ td {
   .scoreboard-hero,
   .league-hero,
   .league-layout,
+  .policy-hero,
+  .policy-layout,
+  .policy-detail-header,
+  .policy-question-band,
+  .policy-bottom-grid,
   .matchup-hero,
   .scoreboard-grid,
   .league-lower-grid,
@@ -1929,6 +2317,11 @@ td {
   .quick-matchups,
   .matchup-board,
   .path-list {
+    grid-template-columns: 1fr;
+  }
+
+  .policy-grid,
+  .policy-outcome-row {
     grid-template-columns: 1fr;
   }
 
@@ -2026,7 +2419,7 @@ td {
     top: 0;
     z-index: 20;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     width: 100%;
     margin: 0 auto 10px;
     border-radius: 10px;
@@ -2037,12 +2430,13 @@ td {
 
   .view-switch button {
     min-height: 36px;
-    padding: 0 6px;
-    font-size: 0.88rem;
+    padding: 0 4px;
+    font-size: 0.78rem;
   }
 
   .scoreboard-shell,
   .matchup-shell,
+  .policy-shell,
   .analysis-area {
     gap: 10px;
   }
@@ -2055,6 +2449,14 @@ td {
   .league-hero,
   .league-hero > div,
   .league-summary,
+  .policy-hero,
+  .policy-hero > div,
+  .policy-layout,
+  .policy-list-panel,
+  .policy-detail-panel,
+  .policy-grid,
+  .policy-jurisdiction-card,
+  .policy-bottom-grid,
   .matchup-hero,
   .matchup-hero > div,
   .matchup-summary,
@@ -2074,6 +2476,7 @@ td {
   }
 
   .league-hero,
+  .policy-hero,
   .matchup-hero,
   .scoreboard-hero {
     padding: 10px 12px;
@@ -2081,6 +2484,7 @@ td {
   }
 
   .league-hero h2,
+  .policy-hero h2,
   .matchup-hero h2,
   .scoreboard-hero h2 {
     margin-top: 5px;
@@ -2089,6 +2493,7 @@ td {
   }
 
   .league-hero p,
+  .policy-hero p,
   .matchup-hero p,
   .scoreboard-hero p {
     display: none;
@@ -2138,6 +2543,10 @@ td {
   .league-table-panel,
   .league-side-panel,
   .selected-team-panel,
+  .policy-list-panel,
+  .policy-detail-panel,
+  .policy-method-panel,
+  .policy-outcome-panel,
   .matchup-toolbar,
   .quick-matchups,
   .matchup-table-panel,
@@ -2149,6 +2558,71 @@ td {
   .economy-snapshot,
   .scenario-deck {
     padding: 12px;
+  }
+
+  .policy-list-panel {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 10px;
+  }
+
+  .policy-list-panel .panel-title,
+  .policy-list-panel .policy-note {
+    display: none;
+  }
+
+  .policy-list-panel button {
+    flex: 0 0 210px;
+    min-height: 62px;
+  }
+
+  .policy-detail-header,
+  .policy-question-band,
+  .policy-grid,
+  .policy-bottom-grid,
+  .policy-outcome-row {
+    grid-template-columns: 1fr;
+  }
+
+  .policy-detail-header {
+    gap: 10px;
+  }
+
+  .policy-detail-header h2 {
+    font-size: 1.45rem;
+  }
+
+  .policy-detail-header p {
+    font-size: 0.9rem;
+  }
+
+  .policy-decision-card,
+  .policy-question-band > div,
+  .policy-jurisdiction-card,
+  .policy-outcome-row > div,
+  .policy-method-list div,
+  .policy-source-list a {
+    padding: 10px;
+  }
+
+  .policy-card-header {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .policy-card-header h3 {
+    font-size: 1.12rem;
+  }
+
+  .policy-signal-list span,
+  .policy-outcome-row strong,
+  .policy-method-list strong {
+    font-size: 0.88rem;
+  }
+
+  .policy-method-list div {
+    grid-template-columns: 30px 1fr;
   }
 
   .league-table-scroll {
