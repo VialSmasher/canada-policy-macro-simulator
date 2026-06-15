@@ -496,7 +496,7 @@ h2 {
 
 .selected-line {
   display: grid;
-  grid-template-columns: 46px 1fr;
+  grid-template-columns: 56px 1fr;
   gap: 10px;
   align-items: center;
   margin-top: 12px;
@@ -506,18 +506,138 @@ h2 {
   background: #faf7f0;
 }
 
-.selected-line > span,
-.picker-results button > span {
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  background: var(--team-primary, #12695f);
+.flag-mark {
+  --flag-primary: var(--team-primary, #12695f);
+  --flag-secondary: var(--team-secondary, #ffffff);
+  --flag-accent: var(--team-accent, #f6c343);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid rgba(31, 37, 40, 0.2);
+  border-radius: 5px;
+  background:
+    linear-gradient(90deg, var(--flag-primary) 0 38%, var(--flag-secondary) 38% 68%, var(--flag-accent) 68% 100%);
   color: white;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
+  font-size: 0.7rem;
   font-weight: 950;
-  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.flag-mark::before,
+.flag-mark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+.flag-mark > span {
+  position: relative;
+  z-index: 1;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.flag-alberta {
+  background:
+    linear-gradient(180deg, #005eb8 0 30%, #ffffff 30% 42%, #f6c343 42% 58%, #ffffff 58% 70%, #005eb8 70% 100%);
+}
+
+.flag-alberta::after {
+  width: 36%;
+  inset: 20% auto 20% 32%;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #d43f2f 0 34%, #f6c343 34% 66%, #1b7f3a 66%);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7);
+}
+
+.flag-ontario {
+  background:
+    linear-gradient(90deg, #c8102e 0 44%, #ffffff 44% 50%, #006b3f 50% 100%);
+}
+
+.flag-ontario::before {
+  inset: 0 56% 50% 0;
+  background:
+    linear-gradient(90deg, #00205b 0 48%, #ffffff 48% 54%, #00205b 54%),
+    linear-gradient(180deg, transparent 0 38%, #ffffff 38% 48%, #c8102e 48% 62%, #ffffff 62% 72%, transparent 72%);
+}
+
+.flag-quebec {
+  background:
+    linear-gradient(90deg, transparent 0 45%, #ffffff 45% 55%, transparent 55%),
+    linear-gradient(180deg, transparent 0 42%, #ffffff 42% 58%, transparent 58%),
+    #0057b8;
+}
+
+.flag-quebec::after {
+  inset: 17% 15%;
+  background:
+    radial-gradient(circle at 20% 25%, #ffffff 0 5%, transparent 6%),
+    radial-gradient(circle at 80% 25%, #ffffff 0 5%, transparent 6%),
+    radial-gradient(circle at 20% 75%, #ffffff 0 5%, transparent 6%),
+    radial-gradient(circle at 80% 75%, #ffffff 0 5%, transparent 6%);
+}
+
+.flag-texas {
+  background:
+    linear-gradient(90deg, #002868 0 36%, transparent 36%),
+    linear-gradient(180deg, #ffffff 0 50%, #bf0a30 50% 100%);
+}
+
+.flag-texas::after,
+.flag-california::after {
+  width: 10px;
+  height: 10px;
+  inset: 50% auto auto 14%;
+  transform: translateY(-50%);
+  clip-path: polygon(50% 0, 62% 35%, 100% 35%, 68% 56%, 80% 95%, 50% 70%, 20% 95%, 32% 56%, 0 35%, 38% 35%);
+  background: #ffffff;
+}
+
+.flag-florida {
+  background:
+    linear-gradient(32deg, transparent 0 45%, #d71920 45% 55%, transparent 55%),
+    linear-gradient(148deg, transparent 0 45%, #d71920 45% 55%, transparent 55%),
+    #ffffff;
+  color: #263032;
+  text-shadow: none;
+}
+
+.flag-florida::after {
+  width: 18px;
+  height: 18px;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: #ff7a1a;
+  box-shadow: inset 0 0 0 4px #ffffff;
+}
+
+.flag-california {
+  background:
+    linear-gradient(180deg, #ffffff 0 74%, #b71234 74% 100%);
+  color: #263032;
+  text-shadow: none;
+}
+
+.flag-california::before {
+  width: 40%;
+  height: 22%;
+  inset: 42% auto auto 34%;
+  border-radius: 999px 999px 6px 6px;
+  background: #7a4a24;
+}
+
+.flag-california::after {
+  background: #b71234;
 }
 
 .selected-line strong,
@@ -567,13 +687,24 @@ h2 {
   border-radius: 8px;
   background: #faf7f0;
   display: grid;
-  grid-template-columns: 40px 1fr;
+  grid-template-columns: 52px 1fr;
   gap: 9px;
   align-items: center;
   text-align: left;
   padding: 8px;
   cursor: pointer;
   min-width: 0;
+}
+
+.selected-flag {
+  width: 54px;
+  height: 38px;
+}
+
+.picker-flag {
+  width: 50px;
+  height: 34px;
+  font-size: 0.7rem;
 }
 
 .picker-results button.active,
@@ -663,22 +794,15 @@ h2 {
 
 .matchup-team-header {
   display: grid;
-  grid-template-columns: 64px 1fr auto;
+  grid-template-columns: 76px 1fr auto;
   gap: 12px;
   align-items: center;
 }
 
-.matchup-team-header > span {
-  width: 64px;
-  height: 64px;
-  border-radius: 999px;
-  background: var(--team-primary, #12695f);
-  color: white;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 950;
-  font-size: 1.3rem;
+.matchup-flag {
+  width: 76px;
+  height: 54px;
+  font-size: 0.9rem;
 }
 
 .matchup-team-header h2 {
@@ -980,8 +1104,7 @@ h2 {
   font-weight: 900;
 }
 
-.team-badge,
-.table-team {
+.team-badge {
   background: var(--team-primary, #12695f);
   color: #fff;
   border-radius: 999px;
@@ -991,9 +1114,6 @@ h2 {
   font-size: 0.78rem;
   font-weight: 950;
   letter-spacing: 0.02em;
-}
-
-.team-badge {
   width: 42px;
   height: 42px;
   border: 2px solid rgba(255, 255, 255, 0.9);
@@ -1061,18 +1181,11 @@ h2 {
 }
 
 .team-mark {
-  width: 76px;
-  height: 76px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.95);
-  color: var(--team-primary, #12695f);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 950;
-  font-size: 1.65rem;
+  width: 88px;
+  height: 62px;
+  font-size: 1.1rem;
   flex: 0 0 auto;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
 }
 
 .team-title {
@@ -1353,10 +1466,10 @@ h2 {
 }
 
 .table-team {
-  width: 32px;
-  height: 24px;
-  margin-right: 8px;
-  border-radius: 6px;
+  width: 36px;
+  height: 26px;
+  border-radius: 5px;
+  font-size: 0.64rem;
 }
 
 .control-rail {
@@ -2164,11 +2277,11 @@ td {
   }
 
   .table-team {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 22px;
     margin-right: 0;
-    border-radius: 6px;
-    font-size: 0.68rem;
+    border-radius: 4px;
+    font-size: 0.6rem;
   }
 
   .movement-badge,
@@ -2209,9 +2322,9 @@ td {
   }
 
   .team-mark {
-    width: 56px;
-    height: 56px;
-    font-size: 1.15rem;
+    width: 68px;
+    height: 48px;
+    font-size: 0.8rem;
   }
 
   .team-title span {
@@ -2279,27 +2392,28 @@ td {
   }
 
   .picker-results button {
-    grid-template-columns: 34px minmax(0, 1fr);
+    grid-template-columns: 42px minmax(0, 1fr);
     gap: 7px;
     min-height: 54px;
     padding: 7px;
   }
 
-  .picker-results button > span {
-    width: 34px;
-    height: 34px;
-    font-size: 0.68rem;
+  .picker-flag {
+    width: 42px;
+    height: 29px;
+    font-size: 0.58rem;
   }
 
   .selected-line {
-    grid-template-columns: 40px 1fr;
+    grid-template-columns: 46px 1fr;
     margin-top: 10px;
     padding: 8px;
   }
 
-  .selected-line > span {
-    width: 38px;
-    height: 38px;
+  .selected-flag {
+    width: 44px;
+    height: 31px;
+    font-size: 0.62rem;
   }
 
   .search-field {
@@ -2477,7 +2591,7 @@ td {
   }
 
   .matchup-team-header {
-    grid-template-columns: 56px 1fr;
+    grid-template-columns: 62px 1fr;
   }
 
   .matchup-team-header b {
@@ -2486,8 +2600,9 @@ td {
     border-radius: 8px;
   }
 
-  .matchup-team-header > span {
-    width: 56px;
-    height: 56px;
+  .matchup-flag {
+    width: 62px;
+    height: 44px;
+    font-size: 0.72rem;
   }
 }

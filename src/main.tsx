@@ -354,9 +354,7 @@ function JurisdictionScoreboard({ onCompare }: { onCompare: (leftId: string, rig
                   >
                     <td>#{standing.currentRank}</td>
                     <td className="standing-place-cell">
-                      <span className="table-team" style={{ "--team-primary": standing.profile.colors.primary } as React.CSSProperties}>
-                        {standing.profile.abbreviation}
-                      </span>
+                      <FlagMark item={standing.profile} className="table-team" />
                       <span className="standing-copy">
                         <strong>{standing.profile.name}</strong>
                         <small>{standing.profile.nickname}</small>
@@ -439,7 +437,7 @@ function JurisdictionScoreboard({ onCompare }: { onCompare: (leftId: string, rig
             className="team-header"
             style={{ "--team-primary": selected.colors.primary, "--team-secondary": selected.colors.secondary, "--team-accent": selected.colors.accent } as React.CSSProperties}
           >
-            <div className="team-mark">{selected.abbreviation}</div>
+            <FlagMark item={selected} className="team-mark" />
             <div className="team-title">
               <span>
                 #{selectedStanding.currentRank} · {selected.kind} in {selected.country}
@@ -574,6 +572,36 @@ function DataBadge({ confidence, completeness }: { confidence: LeagueStanding["d
   return (
     <span className={`data-badge ${confidence}`}>
       {confidence} · {Math.round(completeness * 100)}%
+    </span>
+  );
+}
+
+type FlagItem = {
+  id: string;
+  name: string;
+  abbreviation: string;
+  colors: {
+    primary: string;
+    secondary: string;
+    accent: string;
+  };
+};
+
+function FlagMark({ item, className = "" }: { item: FlagItem; className?: string }) {
+  return (
+    <span
+      aria-label={`${item.name} flag`}
+      className={`flag-mark flag-${item.id} ${className}`.trim()}
+      style={
+        {
+          "--team-primary": item.colors.primary,
+          "--team-secondary": item.colors.secondary,
+          "--team-accent": item.colors.accent
+        } as React.CSSProperties
+      }
+      title={`${item.name} flag`}
+    >
+      <span>{item.abbreviation}</span>
     </span>
   );
 }
@@ -783,7 +811,7 @@ function JurisdictionPicker({
         {title}
       </div>
       <div className="selected-line" style={{ "--team-primary": selected.colors.primary } as React.CSSProperties}>
-        <span>{selected.abbreviation}</span>
+        <FlagMark item={selected} className="selected-flag" />
         <div>
           <strong>{selected.name}</strong>
           <small>
@@ -803,7 +831,7 @@ function JurisdictionPicker({
             style={{ "--team-primary": entry.colors.primary } as React.CSSProperties}
             onClick={() => onSelect(entry.id)}
           >
-            <span>{entry.abbreviation}</span>
+            <FlagMark item={entry} className="picker-flag" />
             <div>
               <strong>{entry.name}</strong>
               <small>
@@ -825,7 +853,7 @@ function MatchupTeamCard({ competitor, align = "left" }: { competitor: Competito
   return (
     <article className={`matchup-team-card ${align}`} style={{ "--team-primary": entry.colors.primary, "--team-secondary": entry.colors.secondary, "--team-accent": entry.colors.accent } as React.CSSProperties}>
       <div className="matchup-team-header">
-        <span>{entry.abbreviation}</span>
+        <FlagMark item={entry} className="matchup-flag" />
         <div>
           <h2>{entry.name}</h2>
           <p>
