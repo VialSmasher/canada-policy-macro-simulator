@@ -65,6 +65,12 @@ h2 {
   font-size: 1.05rem;
 }
 
+.mobile-title,
+.mobile-label,
+.mobile-standing-meta {
+  display: none;
+}
+
 .topbar-actions {
   display: flex;
   gap: 10px;
@@ -308,12 +314,19 @@ h2 {
   min-width: 210px;
 }
 
-.league-table td:nth-child(2) strong,
-.league-table td:nth-child(2) small {
+.standing-place-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.standing-copy,
+.standing-copy strong,
+.standing-copy small {
   display: block;
 }
 
-.league-table td:nth-child(2) small {
+.standing-copy small {
   color: #667174;
 }
 
@@ -1859,9 +1872,19 @@ td {
   }
 
   h1 {
-    font-size: 1.45rem;
+    font-size: 1.7rem;
     line-height: 1.08;
     margin-top: 4px;
+  }
+
+  .desktop-title,
+  .desktop-label {
+    display: none;
+  }
+
+  .mobile-title,
+  .mobile-label {
+    display: inline;
   }
 
   .topbar-actions {
@@ -1940,15 +1963,15 @@ td {
   .league-hero,
   .matchup-hero,
   .scoreboard-hero {
-    padding: 12px;
-    gap: 10px;
+    padding: 10px 12px;
+    gap: 8px;
   }
 
   .league-hero h2,
   .matchup-hero h2,
   .scoreboard-hero h2 {
     margin-top: 5px;
-    font-size: 1.28rem;
+    font-size: 1.18rem;
     line-height: 1.08;
   }
 
@@ -1966,7 +1989,7 @@ td {
   }
 
   .mini-stat {
-    min-height: 62px;
+    min-height: 58px;
     padding: 8px;
   }
 
@@ -2033,18 +2056,19 @@ td {
 
   .league-table tbody {
     display: grid;
-    gap: 10px;
+    gap: 8px;
   }
 
   .league-table tbody tr {
     display: grid;
-    grid-template-columns: 36px minmax(0, 1fr) 78px;
-    gap: 4px 8px;
+    grid-template-columns: 38px minmax(0, 1fr) 48px;
+    gap: 3px 8px;
     border: 1px solid #e2dbd0;
     border-left: 5px solid var(--team-primary, #12695f);
     border-radius: 8px;
     background: #faf7f0;
-    padding: 9px;
+    min-height: 82px;
+    padding: 9px 10px;
   }
 
   .league-table td,
@@ -2071,7 +2095,7 @@ td {
 
   .league-table td:first-child {
     grid-column: 1;
-    grid-row: 1 / 3;
+    grid-row: 1;
     align-self: center;
     color: var(--team-primary, #12695f);
     font-size: 1rem;
@@ -2081,10 +2105,15 @@ td {
     grid-column: 2;
     grid-row: 1;
     min-width: 0;
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 6px 8px;
+    align-items: center;
   }
 
   .league-table td:nth-child(2) strong {
     line-height: 1.1;
+    font-size: 1rem;
   }
 
   .league-table td:nth-child(2) small {
@@ -2099,8 +2128,8 @@ td {
   }
 
   .league-table td:nth-child(3) b {
-    min-width: 40px;
-    min-height: 36px;
+    width: 42px;
+    height: 42px;
     border-radius: 999px;
     background: #12695f;
     color: white;
@@ -2110,54 +2139,42 @@ td {
   }
 
   .league-table td:nth-child(4),
-  .league-table td:nth-child(5) {
-    grid-row: 2;
-    align-self: center;
-    color: #667174;
-    font-size: 0.76rem;
-    font-weight: 850;
-  }
-
-  .league-table td:nth-child(4) {
-    grid-column: 2;
-  }
-
-  .league-table td:nth-child(5) {
-    grid-column: 2;
-    justify-self: end;
-    margin-right: 4px;
-  }
-
-  .league-table td:nth-child(5)::before {
-    content: "Gap ";
-    color: #667174;
-  }
-
+  .league-table td:nth-child(5),
   .league-table td:nth-child(6),
   .league-table td:nth-child(7),
-  .league-table td:nth-child(8) {
+  .league-table td:nth-child(8),
+  .league-table td:nth-child(9) {
     display: none;
   }
 
-  .league-table td:nth-child(9) {
-    grid-column: 3;
-    grid-row: 2;
-    align-self: center;
-    justify-self: end;
+  .standing-copy {
+    min-width: 0;
+  }
+
+  .mobile-standing-meta {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    flex-wrap: wrap;
+    color: #5f696c;
+    font-size: 0.68rem;
+    font-weight: 850;
+    line-height: 1.1;
   }
 
   .table-team {
     width: 28px;
-    height: 22px;
-    margin-right: 6px;
+    height: 28px;
+    margin-right: 0;
     border-radius: 6px;
     font-size: 0.68rem;
   }
 
   .movement-badge,
   .data-badge {
-    padding: 3px 6px;
-    font-size: 0.65rem;
+    padding: 3px 5px;
+    font-size: 0.62rem;
     white-space: nowrap;
   }
 
@@ -2253,8 +2270,12 @@ td {
 
   .picker-results {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    max-height: 188px;
-    overflow-y: auto;
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  .picker-results button:nth-child(n + 5) {
+    display: none;
   }
 
   .picker-results button {
@@ -2272,11 +2293,26 @@ td {
 
   .selected-line {
     grid-template-columns: 40px 1fr;
+    margin-top: 10px;
+    padding: 8px;
   }
 
   .selected-line > span {
     width: 38px;
     height: 38px;
+  }
+
+  .search-field {
+    min-height: 38px;
+    margin-top: 10px;
+  }
+
+  .search-field input {
+    min-height: 36px;
+  }
+
+  .picker-note {
+    display: none;
   }
 
   .quick-matchups {

@@ -138,16 +138,21 @@ function App() {
             <Landmark size={16} />
             Canada framework
           </div>
-          <h1>Municipal & Macroeconomic Policy Simulator</h1>
+          <h1 className="app-title">
+            <span className="desktop-title">Municipal & Macroeconomic Policy Simulator</span>
+            <span className="mobile-title">Policy League</span>
+          </h1>
         </div>
         <div className="topbar-actions">
           <button className="ghost-button" onClick={() => void refreshBaseline()} disabled={loadingBaseline}>
             <RefreshCw size={17} className={loadingBaseline ? "spin" : ""} />
-            Refresh baseline
+            <span className="desktop-label">Refresh baseline</span>
+            <span className="mobile-label">Refresh</span>
           </button>
           <button className="primary-button" onClick={() => downloadJson("simulation-result.json", result)}>
             <Download size={17} />
-            Export run
+            <span className="desktop-label">Export run</span>
+            <span className="mobile-label">Export</span>
           </button>
         </div>
       </header>
@@ -348,12 +353,19 @@ function JurisdictionScoreboard({ onCompare }: { onCompare: (leftId: string, rig
                     onClick={() => setSelectedId(standing.profile.id)}
                   >
                     <td>#{standing.currentRank}</td>
-                    <td>
+                    <td className="standing-place-cell">
                       <span className="table-team" style={{ "--team-primary": standing.profile.colors.primary } as React.CSSProperties}>
                         {standing.profile.abbreviation}
                       </span>
-                      <strong>{standing.profile.name}</strong>
-                      <small>{standing.profile.nickname}</small>
+                      <span className="standing-copy">
+                        <strong>{standing.profile.name}</strong>
+                        <small>{standing.profile.nickname}</small>
+                      </span>
+                      <span className="mobile-standing-meta">
+                        <MovementBadge movement={standing.movement} />
+                        <span>{standing.gapToLeader === 0 ? "Leader" : `${standing.gapToLeader} back`}</span>
+                        <DataBadge confidence={standing.dataConfidence} completeness={standing.entry.dataCompleteness} />
+                      </span>
                     </td>
                     <td>
                       <b>{standing.score.overall}</b>
