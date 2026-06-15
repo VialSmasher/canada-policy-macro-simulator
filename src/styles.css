@@ -78,6 +78,10 @@ h2 {
   justify-content: flex-end;
 }
 
+.topbar-actions.single {
+  min-width: 180px;
+}
+
 .view-switch {
   max-width: 1500px;
   margin: 0 auto 16px;
@@ -236,6 +240,11 @@ h2 {
   align-items: center;
 }
 
+.policy-hero.decision-hero {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 410px);
+  align-items: stretch;
+}
+
 .league-hero h2 {
   margin-top: 8px;
   font-size: clamp(1.55rem, 3vw, 2.25rem);
@@ -258,6 +267,82 @@ h2 {
   color: #4e5a5d;
   line-height: 1.5;
   margin: 10px 0 0;
+}
+
+.policy-verdict-card {
+  border: 1px solid #e2dbd0;
+  border-radius: 8px;
+  background: #faf7f0;
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+  align-content: space-between;
+  border-left: 6px solid #80562a;
+}
+
+.policy-verdict-card.copy {
+  border-left-color: #12695f;
+}
+
+.policy-verdict-card.study {
+  border-left-color: #80562a;
+}
+
+.policy-verdict-card.avoid {
+  border-left-color: #aa3f21;
+}
+
+.policy-verdict-card span {
+  color: #536063;
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.policy-verdict-card strong {
+  font-size: clamp(1.45rem, 2.5vw, 2.1rem);
+  line-height: 1.05;
+}
+
+.policy-verdict-card p {
+  color: #4e5a5d;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.policy-score-line {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.policy-score-line b {
+  color: #162225;
+  font-size: 1rem;
+}
+
+.policy-score-track {
+  height: 10px;
+  border-radius: 999px;
+  background: #e8e0d4;
+  overflow: hidden;
+}
+
+.policy-score-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #12695f;
+}
+
+.policy-verdict-card.study .policy-score-track i {
+  background: #80562a;
+}
+
+.policy-verdict-card.avoid .policy-score-track i {
+  background: #aa3f21;
 }
 
 .division-strip {
@@ -484,6 +569,86 @@ h2 {
   padding: 16px;
 }
 
+.policy-control-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
+  gap: 16px;
+  min-width: 0;
+}
+
+.policy-target-picker,
+.policy-action-card {
+  background: #fffdf8;
+  border: 1px solid #d9d3c8;
+  border-radius: 8px;
+  box-shadow: 0 1px 0 rgba(31, 37, 40, 0.05);
+}
+
+.policy-target-picker {
+  padding: 16px;
+  min-width: 0;
+}
+
+.policy-target-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.policy-target-options button {
+  min-width: 0;
+  min-height: 58px;
+  border: 1px solid #e1d9cd;
+  border-radius: 8px;
+  background: #faf7f0;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+  padding: 8px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.policy-target-options button.active,
+.policy-target-options button:hover {
+  border-color: var(--team-primary, #12695f);
+  box-shadow: inset 0 0 0 1px var(--team-primary, #12695f);
+}
+
+.policy-target-options strong,
+.policy-target-options small {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.policy-target-options small {
+  color: #667174;
+  font-size: 0.76rem;
+}
+
+.policy-target-flag {
+  width: 46px;
+  height: 32px;
+  font-size: 0.66rem;
+}
+
+.policy-lens-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+
+.policy-lens-grid .mini-stat strong {
+  font-size: 1.22rem;
+  overflow-wrap: anywhere;
+}
+
 .policy-layout {
   display: grid;
   grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
@@ -606,6 +771,45 @@ h2 {
   display: block;
   margin-top: 6px;
   line-height: 1.25;
+}
+
+.policy-action-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.policy-action-card {
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 10px;
+  background: #faf7f0;
+}
+
+.policy-action-card > span {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #12695f;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+}
+
+.policy-action-card strong {
+  display: block;
+  line-height: 1.2;
+}
+
+.policy-action-card p {
+  color: #4e5a5d;
+  font-size: 0.86rem;
+  line-height: 1.35;
+  margin: 6px 0 0;
 }
 
 .policy-grid {
@@ -2306,9 +2510,11 @@ td {
   .league-hero,
   .league-layout,
   .policy-hero,
+  .policy-control-strip,
   .policy-layout,
   .policy-detail-header,
   .policy-question-band,
+  .policy-action-grid,
   .policy-bottom-grid,
   .matchup-hero,
   .scoreboard-grid,
@@ -2321,7 +2527,12 @@ td {
   }
 
   .policy-grid,
+  .policy-target-options,
   .policy-outcome-row {
+    grid-template-columns: 1fr;
+  }
+
+  .policy-hero.decision-hero {
     grid-template-columns: 1fr;
   }
 
@@ -2349,6 +2560,7 @@ td {
   .scouting-grid,
   .stat-sheet-grid,
   .league-summary,
+  .policy-lens-grid,
   .matchup-summary,
   .matchup-mini-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2398,6 +2610,11 @@ td {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     justify-content: stretch;
     gap: 8px;
+  }
+
+  .topbar-actions.single {
+    grid-template-columns: 1fr;
+    min-width: 0;
   }
 
   .topbar-actions > button {
@@ -2451,9 +2668,14 @@ td {
   .league-summary,
   .policy-hero,
   .policy-hero > div,
+  .policy-control-strip,
   .policy-layout,
   .policy-list-panel,
   .policy-detail-panel,
+  .policy-target-picker,
+  .policy-target-options,
+  .policy-lens-grid,
+  .policy-action-grid,
   .policy-grid,
   .policy-jurisdiction-card,
   .policy-bottom-grid,
@@ -2493,13 +2715,14 @@ td {
   }
 
   .league-hero p,
-  .policy-hero p,
+  .policy-hero-copy p,
   .matchup-hero p,
   .scoreboard-hero p {
     display: none;
   }
 
   .league-summary,
+  .policy-lens-grid,
   .matchup-summary,
   .matchup-mini-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2543,6 +2766,7 @@ td {
   .league-table-panel,
   .league-side-panel,
   .selected-team-panel,
+  .policy-target-picker,
   .policy-list-panel,
   .policy-detail-panel,
   .policy-method-panel,
@@ -2577,9 +2801,39 @@ td {
     min-height: 62px;
   }
 
+  .policy-target-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .policy-target-options button {
+    grid-template-columns: 42px minmax(0, 1fr);
+    min-height: 54px;
+    padding: 7px;
+  }
+
+  .policy-target-flag {
+    width: 42px;
+    height: 29px;
+    font-size: 0.58rem;
+  }
+
+  .policy-lens-grid,
+  .policy-action-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .policy-verdict-card {
+    padding: 12px;
+  }
+
+  .policy-verdict-card strong {
+    font-size: 1.35rem;
+  }
+
   .policy-detail-header,
   .policy-question-band,
   .policy-grid,
+  .policy-action-grid,
   .policy-bottom-grid,
   .policy-outcome-row {
     grid-template-columns: 1fr;
@@ -2599,6 +2853,7 @@ td {
 
   .policy-decision-card,
   .policy-question-band > div,
+  .policy-action-card,
   .policy-jurisdiction-card,
   .policy-outcome-row > div,
   .policy-method-list div,

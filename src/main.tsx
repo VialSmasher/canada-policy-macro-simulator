@@ -46,7 +46,7 @@ import {
   type LeagueDivisionId,
   type LeagueStanding
 } from "./lib/league";
-import { policyLabPolicies, type EvidenceGrade, type OutcomeDirection, type PolicyStatus } from "./lib/policyLab";
+import { policyLabPolicies, type EvidenceGrade, type OutcomeDirection, type PolicyLabPolicy, type PolicyStatus } from "./lib/policyLab";
 import { runPolicySimulation, runStressAudit } from "./lib/svar";
 import type { MacroBaseline, PolicyScenario, Province, SimulationRow, StressComparison } from "./lib/types";
 import "./styles.css";
@@ -64,7 +64,7 @@ const defaultScenario: PolicyScenario = {
 };
 
 function App() {
-  const [activeView, setActiveView] = useState<"scoreboard" | "matchup" | "policy" | "simulator">("scoreboard");
+  const [activeView, setActiveView] = useState<"scoreboard" | "matchup" | "policy" | "simulator">("policy");
   const [matchupPair, setMatchupPair] = useState({ leftId: "alberta", rightId: "texas" });
   const [baseline, setBaseline] = useState<MacroBaseline>(fallbackBaseline(["Live baseline has not loaded yet."]));
   const [scenario, setScenario] = useState<PolicyScenario>(defaultScenario);
@@ -131,45 +131,61 @@ function App() {
     setActiveView("matchup");
   }
 
+  function exportCurrentView() {
+    if (activeView === "policy") {
+      downloadJson("policy-league-evidence.json", {
+        exportedAt: new Date().toISOString(),
+        policies: policyLabPolicies,
+        profiledJurisdictions: jurisdictions,
+        directorySize: jurisdictionDirectory.length
+      });
+      return;
+    }
+
+    downloadJson("simulation-result.json", result);
+  }
+
   return (
     <main className="app-shell">
       <header className="topbar">
         <div>
           <div className="eyebrow">
             <Landmark size={16} />
-            Canada framework
+            Canada + US framework
           </div>
           <h1 className="app-title">
-            <span className="desktop-title">Municipal & Macroeconomic Policy Simulator</span>
-            <span className="mobile-title">Policy League</span>
+            <span className="desktop-title">Policy League</span>
+            <span className="mobile-title">Policy Lab</span>
           </h1>
         </div>
-        <div className="topbar-actions">
-          <button className="ghost-button" onClick={() => void refreshBaseline()} disabled={loadingBaseline}>
-            <RefreshCw size={17} className={loadingBaseline ? "spin" : ""} />
-            <span className="desktop-label">Refresh baseline</span>
-            <span className="mobile-label">Refresh</span>
-          </button>
-          <button className="primary-button" onClick={() => downloadJson("simulation-result.json", result)}>
+        <div className={`topbar-actions ${activeView === "simulator" ? "" : "single"}`.trim()}>
+          {activeView === "simulator" ? (
+            <button className="ghost-button" onClick={() => void refreshBaseline()} disabled={loadingBaseline}>
+              <RefreshCw size={17} className={loadingBaseline ? "spin" : ""} />
+              <span className="desktop-label">Refresh baseline</span>
+              <span className="mobile-label">Refresh</span>
+            </button>
+          ) : null}
+          <button className="primary-button" onClick={exportCurrentView}>
             <Download size={17} />
-            <span className="desktop-label">Export run</span>
+            <span className="desktop-label">{activeView === "policy" ? "Export evidence" : "Export run"}</span>
             <span className="mobile-label">Export</span>
           </button>
         </div>
       </header>
 
       <div className="view-switch">
+        <button className={activeView === "policy" ? "active" : ""} onClick={() => setActiveView("policy")}>
+          Policy Lab
+        </button>
         <button className={activeView === "scoreboard" ? "active" : ""} onClick={() => setActiveView("scoreboard")}>
           Scoreboard
         </button>
         <button className={activeView === "matchup" ? "active" : ""} onClick={() => setActiveView("matchup")}>
           Matchup
         </button>
-        <button className={activeView === "policy" ? "active" : ""} onClick={() => setActiveView("policy")}>
-          Policy Lab
-        </button>
         <button className={activeView === "simulator" ? "active" : ""} onClick={() => setActiveView("simulator")}>
-          Simulator
+          Sandbox
         </button>
       </div>
 
@@ -276,33 +292,123 @@ type ImpactEstimate = {
   gameScore: number;
 };
 
+const policyTargetIds = ["alberta", "nevada", "texas", "california", "ontario", "quebec", "florida"];
+
+type PolicyVerdict = {
+  label: string;
+  tone: "copy" | "study" | "avoid";
+  score: number;
+  rationale: string;
+  nextSteps: { title: string; body: string }[];
+};
+
+function buildPolicyVerdict(policy: PolicyLabPolicy, target: JurisdictionDirectoryEntry): PolicyVerdict {
+  const strongerSignals = policy.outcomes.filter((item) => item.grade === "moderate" || item.grade === "strong").length;
+  const riskSignals = policy.outcomes.filter((item) => item.direction === "risk" || item.direction === "worse").length;
+  const positiveSignals = policy.outcomes.filter((item) => item.direction === "better").length;
+  const regionalExamples = policy.jurisdictions.filter((item) => item.region === target.name || item.name.includes(target.name));
+  const hasLocalExample = regionalExamples.length > 0;
+  const dataBonus = Math.round(target.dataCompleteness * 12);
+  const evidenceScore = Math.round((strongerSignals / Math.max(policy.outcomes.length, 1)) * 22);
+  const postureScore = hasLocalExample ? 24 : target.kind === "state" ? 10 : 6;
+  const directionScore = positiveSignals * 10 - riskSignals * 7;
+  const score = clampScore(38 + evidenceScore + postureScore + directionScore + dataBonus);
+  const label = score >= 74 && riskSignals <= 1 ? "Copy with guardrails" : score >= 46 ? "Study before copying" : "Build evidence first";
+  const tone: PolicyVerdict["tone"] = label.startsWith("Copy") ? "copy" : label.startsWith("Build") ? "avoid" : "study";
+  const localText = hasLocalExample
+    ? `${target.name} already has a nearby evidence trail through ${regionalExamples.map((item) => item.name).join(" and ")}.`
+    : `${target.name} does not have a direct local benchmark in this file yet.`;
+  const rationale =
+    `${localText} The useful move is to separate operational wins from public outcomes before calling the policy a win.`;
+
+  return {
+    label,
+    tone,
+    score,
+    rationale,
+    nextSteps: [
+      {
+        title: "Pick the peer set",
+        body: `Match ${target.abbreviation} against places with similar population, call volume, staffing, density, and baseline trend before judging the policy.`
+      },
+      {
+        title: "Demand outcome data",
+        body: "Track response time, use-of-force, complaints, cost per incident, and false-negative risk before ranking the program."
+      },
+      {
+        title: "Write the guardrails",
+        body: "Define retention limits, allowed call types, public reporting, audit access, and sunset review before scaling."
+      }
+    ]
+  };
+}
+
 function PolicyLab() {
   const [selectedPolicyId, setSelectedPolicyId] = useState(policyLabPolicies[0]?.id ?? "");
+  const targetOptions = policyTargetIds.map((id) => directoryEntryFor(id)).filter((entry): entry is JurisdictionDirectoryEntry => Boolean(entry));
+  const [selectedTargetId, setSelectedTargetId] = useState(targetOptions[0]?.id ?? "alberta");
   const selectedPolicy = policyLabPolicies.find((policy) => policy.id === selectedPolicyId) ?? policyLabPolicies[0];
+  const selectedTarget = targetOptions.find((item) => item.id === selectedTargetId) ?? targetOptions[0];
   const scaledCount = selectedPolicy.jurisdictions.filter((item) => item.status === "scaled" || item.status === "benchmark").length;
   const restrictedCount = selectedPolicy.jurisdictions.filter((item) => item.status === "restricted").length;
   const strongerSignals = selectedPolicy.outcomes.filter((item) => item.grade === "moderate" || item.grade === "strong").length;
+  const verdict = buildPolicyVerdict(selectedPolicy, selectedTarget);
 
   return (
     <section className="policy-shell">
-      <div className="policy-hero">
-        <div>
+      <div className="policy-hero decision-hero">
+        <div className="policy-hero-copy">
           <div className="panel-title">
             <ShieldCheck size={18} />
             Policy lab
           </div>
-          <h2>Track policy bets against real outcomes</h2>
+          <h2>Which policy should your jurisdiction copy next?</h2>
           <p>
-            A policy can be popular, controversial, expensive, or impressive on paper. The useful question is whether adopters outperform
-            similar non-adopters after launch, and how strong that evidence is.
+            Compare adopters, restricted peers, and benchmark jurisdictions before turning a promising idea into a public commitment.
           </p>
         </div>
-        <div className="league-summary">
-          <MiniStat label="Policy" value={selectedPolicy.title} detail={selectedPolicy.category} />
-          <MiniStat label="Tracked places" value={String(selectedPolicy.jurisdictions.length)} detail={`${scaledCount} adopter or benchmark`} />
-          <MiniStat label="Evidence" value={`${strongerSignals}/${selectedPolicy.outcomes.length}`} detail="moderate+ signals" />
+        <div className={`policy-verdict-card ${verdict.tone}`}>
+          <span>Verdict for {selectedTarget.name}</span>
+          <strong>{verdict.label}</strong>
+          <p>{verdict.rationale}</p>
+          <div className="policy-score-line">
+            <b>{verdict.score}/100</b>
+            <div className="policy-score-track">
+              <i style={{ width: `${verdict.score}%` }} />
+            </div>
+          </div>
         </div>
       </div>
+
+      <section className="policy-control-strip">
+        <div className="policy-target-picker">
+          <div className="panel-title">
+            <Search size={18} />
+            Test fit for
+          </div>
+          <div className="policy-target-options">
+            {targetOptions.map((target) => (
+              <button
+                className={selectedTarget.id === target.id ? "active" : ""}
+                key={target.id}
+                onClick={() => setSelectedTargetId(target.id)}
+                style={{ "--team-primary": target.colors.primary } as React.CSSProperties}
+              >
+                <FlagMark item={target} className="policy-target-flag" />
+                <span>
+                  <strong>{target.name}</strong>
+                  <small>{target.country} / {target.dataStatus}</small>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="policy-lens-grid">
+          <MiniStat label="Policy" value={selectedPolicy.title} detail={selectedPolicy.category} />
+          <MiniStat label="Tracked" value={String(selectedPolicy.jurisdictions.length)} detail={`${scaledCount} adopter or benchmark`} />
+          <MiniStat label="Evidence" value={`${strongerSignals}/${selectedPolicy.outcomes.length}`} detail="moderate+ signals" />
+        </div>
+      </section>
 
       <div className="policy-layout">
         <aside className="policy-list-panel">
@@ -355,6 +461,18 @@ function PolicyLab() {
               <span>Restricted peers</span>
               <strong>{restrictedCount}</strong>
             </div>
+          </div>
+
+          <div className="policy-action-grid">
+            {verdict.nextSteps.map((step, index) => (
+              <article className="policy-action-card" key={step.title}>
+                <span>{index + 1}</span>
+                <div>
+                  <strong>{step.title}</strong>
+                  <p>{step.body}</p>
+                </div>
+              </article>
+            ))}
           </div>
 
           <div className="policy-grid">
